@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaoLaoAPI 教程</title>
+<style>
+/* ===== CSS Variables (VitePress-inspired) ===== */
+:root {
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-soft: #f6f6f7;
+  --vp-c-bg-mute: #f1f1f2;
+  --vp-c-bg-alt: #ffffff;
+  --vp-c-divider: #e2e2e3;
+  --vp-c-divider-light: #eaeaea;
+  --vp-c-text-1: #213547;
+  --vp-c-text-2: #3c3c43;
+  --vp-c-text-3: #676767;
+  --vp-c-brand-1: #3451b2;
+  --vp-c-brand-2: #4a6bcf;
+  --vp-c-brand-3: #3451b2;
+  --vp-c-brand-soft: #ecf0ff;
+  --vp-c-green: #10b981;
+  --vp-c-green-soft: #d1fae5;
+  --vp-c-yellow: #d97706;
+  --vp-c-yellow-soft: #fef3c7;
+  --vp-c-red: #ef4444;
+  --vp-c-red-soft: #fee2e2;
+  --vp-c-tip: #10b981;
+  --vp-c-warning: #d97706;
+  --vp-c-danger: #ef4444;
+  --vp-c-default-1: #e2e2e3;
+  --vp-c-default-2: #c2c2c4;
+  --vp-c-default-3: #a8a8aa;
+  --vp-c-code-bg: #f6f8fa;
+  --vp-custom-block-tip-bg: #f0fdf4;
+  --vp-custom-block-tip-border: #10b981;
+  --vp-custom-block-warning-bg: #fffbeb;
+  --vp-custom-block-warning-border: #d97706;
+  --vp-custom-block-danger-bg: #fef2f2;
+  --vp-custom-block-danger-border: #ef4444;
+  --vp-custom-block-info-bg: #eff6ff;
+  --vp-custom-block-info-border: #3b82f6;
+  --vp-nav-height: 64px;
+  --vp-sidebar-width: 272px;
+  --vp-aside-width: 224px;
+  --vp-z-index-nav: 20;
+  --vp-z-index-sidebar: 30;
+  --vp-font-family-base: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --vp-font-family-mono: "JetBrains Mono", "Fira Code", "Cascadia Code", Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+.dark {
+  --vp-c-bg: #1b1b1f;
+  --vp-c-bg-soft: #202127;
+  --vp-c-bg-mute: #2b2b30;
+  --vp-c-bg-alt: #161618;
+  --vp-c-divider: #2e2e32;
+  --vp-c-divider-light: #2e2e32;
+  --vp-c-text-1: #e4e4e9;
+  --vp-c-text-2: #cfcfd6;
+  --vp-c-text-3: #98989f;
+  --vp-c-brand-1: #6b8cff;
+  --vp-c-brand-2: #5070f5;
+  --vp-c-brand-3: #3e5bc0;
+  --vp-c-brand-soft: #1e2a4a;
+  --vp-c-green: #34d399;
+  --vp-c-green-soft: #064e3b;
+  --vp-c-yellow: #fbbf24;
+  --vp-c-yellow-soft: #78350f;
+  --vp-c-red: #f87171;
+  --vp-c-red-soft: #7f1d1d;
+  --vp-c-code-bg: #282c34;
+  --vp-custom-block-tip-bg: #064e3b;
+  --vp-custom-block-warning-bg: #78350f;
+  --vp-custom-block-danger-bg: #7f1d1d;
+  --vp-custom-block-info-bg: #1e3a5f;
+}
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--vp-font-family-base);
+  color: var(--vp-c-text-1);
+  background: var(--vp-c-bg);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--vp-c-brand-1); text-decoration: none; }
+a:hover { color: var(--vp-c-brand-2); text-decoration: underline; }
+img { max-width: 100%; }
+
+/* ===== Layout ===== */
+.Layout { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ===== Navbar ===== */
+.NavBar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: var(--vp-z-index-nav);
+  height: var(--vp-nav-height);
+  background: var(--vp-c-bg);
+  border-bottom: 1px solid var(--vp-c-divider);
+  display: flex; align-items: center;
+  padding: 0 24px;
+  backdrop-filter: blur(12px);
+}
+.NavBar-title {
+  font-size: 1rem; font-weight: 600; color: var(--vp-c-text-1);
+  display: flex; align-items: center; gap: 8px;
+}
+.NavBar-title img { width: 24px; height: 24px; border-radius: 4px; }
+.NavBar-nav {
+  display: flex; align-items: center; gap: 4px;
+  margin-left: 40px;
+}
+.NavBar-nav a {
+  padding: 6px 12px; border-radius: 6px; font-size: 0.875rem;
+  font-weight: 500; color: var(--vp-c-text-2); transition: color 0.2s;
+}
+.NavBar-nav a:hover,
+.NavBar-nav a.active { color: var(--vp-c-brand-1); text-decoration: none; }
+.NavBar-spacer { flex: 1; }
+.NavBar-search {
+  display: flex; align-items: center; gap: 8px; padding: 6px 14px;
+  border: 1px solid var(--vp-c-divider); border-radius: 8px;
+  font-size: 0.8125rem; color: var(--vp-c-text-3); cursor: pointer;
+  transition: border-color 0.2s; background: var(--vp-c-bg-soft);
+  min-width: 200px; margin-right: 16px;
+}
+.NavBar-search:hover { border-color: var(--vp-c-brand-1); }
+.NavBar-search kbd {
+  border: 1px solid var(--vp-c-divider); border-radius: 4px;
+  padding: 1px 6px; font-size: 0.75rem; font-family: var(--vp-font-family-mono);
+  background: var(--vp-c-bg-mute); margin-left: auto;
+}
+.NavBar-icons { display: flex; align-items: center; gap: 4px; }
+.NavBar-icons button {
+  width: 36px; height: 36px; border: none; border-radius: 8px;
+  background: transparent; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; color: var(--vp-c-text-2); font-size: 1.1rem;
+  transition: background 0.2s;
+}
+.NavBar-icons button:hover { background: var(--vp-c-bg-mute); }
+.NavBar-menu-btn { display: none; }
+
+/* ===== Sidebar ===== */
+.Sidebar {
+  position: fixed; top: var(--vp-nav-height); left: 0; bottom: 0;
+  width: var(--vp-sidebar-width);
+  overflow-y: auto; padding: 24px 16px 96px;
+  border-right: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg);
+  z-index: var(--vp-z-index-sidebar);
+}
+.Sidebar::-webkit-scrollbar { width: 4px; }
+.Sidebar::-webkit-scrollbar-thumb { background: var(--vp-c-divider); border-radius: 2px; }
+.Sidebar-group { margin-bottom: 20px; }
+.Sidebar-group-title {
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--vp-c-text-3);
+  padding: 6px 12px; margin-bottom: 4px;
+}
+.Sidebar-link {
+  display: block; padding: 6px 12px; font-size: 0.875rem;
+  color: var(--vp-c-text-2); border-radius: 6px; transition: all 0.2s;
+  font-weight: 400;
+}
+.Sidebar-link:hover { color: var(--vp-c-brand-1); text-decoration: none; background: var(--vp-c-brand-soft); }
+.Sidebar-link.active { color: var(--vp-c-brand-1); background: var(--vp-c-brand-soft); font-weight: 500; }
+
+/* ===== Content ===== */
+.Content {
+  margin-left: var(--vp-sidebar-width);
+  padding-top: var(--vp-nav-height);
+  min-height: 100vh;
+}
+.Content-body {
+  max-width: 752px;
+  margin: 0 auto;
+  padding: 32px 48px 96px;
+}
+
+/* ===== Hero Section ===== */
+.VPHero {
+  padding: 64px 0 48px;
+  text-align: center;
+}
+.VPHero .name {
+  font-size: 3rem; font-weight: 700; line-height: 1.2;
+  background: linear-gradient(135deg, var(--vp-c-brand-1), var(--vp-c-brand-2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.VPHero .text {
+  margin-top: 16px; font-size: 1.5rem; font-weight: 500;
+  color: var(--vp-c-text-2); max-width: 600px; margin-left: auto; margin-right: auto;
+}
+.VPHero .tagline {
+  margin-top: 8px; font-size: 1.125rem; color: var(--vp-c-text-3);
+  max-width: 520px; margin-left: auto; margin-right: auto;
+}
+.VPHero .actions {
+  margin-top: 32px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+}
+.VPHero .actions a {
+  display: inline-flex; align-items: center; padding: 10px 24px;
+  border-radius: 8px; font-size: 0.9375rem; font-weight: 600;
+  transition: all 0.2s;
+}
+.VPButton-brand {
+  background: var(--vp-c-brand-1); color: #fff; border: 1px solid transparent;
+}
+.VPButton-brand:hover { background: var(--vp-c-brand-2); color: #fff; text-decoration: none; }
+.VPButton-alt {
+  background: var(--vp-c-bg-soft); color: var(--vp-c-text-1);
+  border: 1px solid var(--vp-c-divider);
+}
+.VPButton-alt:hover { border-color: var(--vp-c-brand-1); color: var(--vp-c-brand-1); text-decoration: none; }
+
+/* ===== Feature Cards ===== */
+.VPFeatures {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 24px; max-width: 960px; margin: 0 auto; padding: 48px;
+}
+.VPFeature {
+  padding: 24px; border-radius: 12px; background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  transition: border-color 0.2s;
+}
+.VPFeature:hover { border-color: var(--vp-c-brand-1); }
+.VPFeature .icon { font-size: 1.5rem; margin-bottom: 12px; }
+.VPFeature .title { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+.VPFeature .details { font-size: 0.875rem; color: var(--vp-c-text-3); line-height: 1.6; }
+
+/* ===== Home Link Cards ===== */
+.VPHomeLinks {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 16px; max-width: 960px; margin: 0 auto; padding: 0 48px 48px;
+}
+.VPHomeLink {
+  padding: 20px 24px; border-radius: 12px; background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-divider);
+  transition: border-color 0.2s;
+}
+.VPHomeLink:hover { border-color: var(--vp-c-brand-1); text-decoration: none; }
+.VPHomeLink .title { font-size: 1rem; font-weight: 600; color: var(--vp-c-text-1); margin-bottom: 4px; }
+.VPHomeLink .desc { font-size: 0.8125rem; color: var(--vp-c-text-3); line-height: 1.5; }
+
+/* ===== API Endpoint Banner ===== */
+.VPHomeApi {
+  max-width: 960px; margin: 0 auto; padding: 0 48px 32px;
+  text-align: center;
+}
+.VPHomeApi code {
+  background: var(--vp-c-code-bg); padding: 8px 16px; border-radius: 8px;
+  font-size: 0.8125rem; font-family: var(--vp-font-family-mono);
+  color: var(--vp-c-brand-1); border: 1px solid var(--vp-c-divider);
+}
+
+/* ===== Page Content ===== */
+.VPDoc h1 {
+  font-size: 2rem; font-weight: 700; margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+.VPDoc h2 {
+  font-size: 1.375rem; font-weight: 600; margin: 48px 0 16px;
+  padding-top: 24px; border-top: 1px solid var(--vp-c-divider);
+}
+.VPDoc h3 {
+  font-size: 1.125rem; font-weight: 600; margin: 32px 0 12px;
+}
+.VPDoc h4 { font-size: 1rem; font-weight: 600; margin: 24px 0 8px; }
+.VPDoc p { margin: 16px 0; font-size: 0.9375rem; line-height: 1.75; }
+.VPDoc ul, .VPDoc ol { margin: 16px 0; padding-left: 24px; }
+.VPDoc li { margin: 8px 0; font-size: 0.9375rem; }
+.VPDoc strong { font-weight: 600; }
+.VPDoc code {
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.875em;
+  background: var(--vp-c-code-bg);
+  padding: 2px 6px; border-radius: 4px;
+  color: var(--vp-c-brand-1);
+}
+.VPDoc pre {
+  margin: 16px 0; padding: 20px 24px; border-radius: 8px;
+  background: var(--vp-c-code-bg); overflow-x: auto;
+  border: 1px solid var(--vp-c-divider);
+  font-size: 0.875rem; line-height: 1.6;
+}
+.VPDoc pre code {
+  background: none; padding: 0; color: var(--vp-c-text-1);
+  font-size: inherit;
+}
+.VPDoc table {
+  width: 100%; margin: 16px 0; border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.VPDoc th, .VPDoc td {
+  padding: 10px 16px; text-align: left;
+  border: 1px solid var(--vp-c-divider);
+}
+.VPDoc th {
+  background: var(--vp-c-bg-soft); font-weight: 600;
+  font-size: 0.8125rem; color: var(--vp-c-text-2);
+}
+.VPDoc tr:nth-child(even) td { background: var(--vp-c-bg-soft); }
+
+/* ===== Custom Blocks ===== */
+.custom-block {
+  margin: 16px 0; padding: 14px 20px; border-radius: 8px;
+  font-size: 0.875rem; line-height: 1.6; border-left: 4px solid;
+}
+.custom-block.tip {
+  background: var(--vp-custom-block-tip-bg);
+  border-color: var(--vp-custom-block-tip-border);
+}
+.custom-block.warning {
+  background: var(--vp-custom-block-warning-bg);
+  border-color: var(--vp-custom-block-warning-border);
+}
+.custom-block.danger {
+  background: var(--vp-custom-block-danger-bg);
+  border-color: var(--vp-custom-block-danger-border);
+}
+.custom-block.info {
+  background: var(--vp-custom-block-info-bg);
+  border-color: var(--vp-custom-block-info-border);
+}
+.custom-block .custom-block-title {
+  font-weight: 600; margin-bottom: 4px; font-size: 0.875rem;
+}
+
+/* ===== Pager ===== */
+.Pager {
+  display: flex; justify-content: space-between; margin-top: 64px;
+  padding-top: 24px; border-top: 1px solid var(--vp-c-divider);
+}
+.Pager a {
+  display: flex; flex-direction: column; padding: 12px 16px;
+  border-radius: 8px; border: 1px solid var(--vp-c-divider);
+  transition: border-color 0.2s; max-width: 48%;
+}
+.Pager a:hover { border-color: var(--vp-c-brand-1); text-decoration: none; }
+.Pager .prev { text-align: left; }
+.Pager .next { text-align: right; }
+.Pager .desc { font-size: 0.75rem; color: var(--vp-c-text-3); }
+.Pager .title { font-size: 0.875rem; font-weight: 500; color: var(--vp-c-brand-1); }
+
+/* ===== Page Section (hidden by default) ===== */
+.page-section { display: none; }
+.page-section.active { display: block; }
+
+/* ===== Back to top ===== */
+.back-to-top {
+  position: fixed; bottom: 32px; right: 32px;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--vp-c-brand-1); color: #fff;
+  border: none; cursor: pointer; font-size: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transform: translateY(10px); transition: all 0.2s;
+  z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.back-to-top.visible { opacity: 1; transform: translateY(0); }
+.back-to-top:hover { background: var(--vp-c-brand-2); }
+
+/* ===== Aside (right TOC) ===== */
+.Aside {
+  position: fixed; top: var(--vp-nav-height); right: 0; bottom: 0;
+  width: var(--vp-aside-width); overflow-y: auto; padding: 24px 16px 96px;
+  display: none;
+}
+.Aside::-webkit-scrollbar { width: 4px; }
+.Aside::-webkit-scrollbar-thumb { background: var(--vp-c-divider); border-radius: 2px; }
+.Aside-title {
+  font-size: 0.75rem; font-weight: 600; color: var(--vp-c-text-3);
+  text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;
+}
+.Aside a {
+  display: block; padding: 4px 0; font-size: 0.8125rem;
+  color: var(--vp-c-text-3); border-left: 2px solid transparent;
+  padding-left: 12px; transition: all 0.2s;
+}
+.Aside a:hover { color: var(--vp-c-text-1); text-decoration: none; }
+.Aside a.active { color: var(--vp-c-brand-1); border-left-color: var(--vp-c-brand-1); }
+
+/* ===== Section Divider ===== */
+.section-divider {
+  border: none; border-top: 1px solid var(--vp-c-divider);
+  margin: 48px 0;
+}
+
+/* ===== Sidebar Overlay ===== */
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 25;
+}
+.sidebar-overlay.open { display: block; }
+
+/* ===== Responsive ===== */
+@media (max-width: 960px) {
+  .VPFeatures { grid-template-columns: 1fr; padding: 32px 24px; }
+  .VPHomeLinks { grid-template-columns: 1fr; padding: 0 24px 32px; }
+  .VPHomeApi { padding: 0 24px 32px; }
+  .Sidebar { display: none; }
+  .Sidebar.open { display: block; z-index: 30; }
+  .Aside { display: none !important; }
+  .Content { margin-left: 0; }
+  .Content-body { padding: 24px 24px 96px; max-width: 100%; }
+  .NavBar-menu-btn { display: flex; }
+  .NavBar-nav { display: none; }
+  .NavBar-search { display: none; }
+  .VPHero .name { font-size: 2.25rem; }
+  .VPHero .text { font-size: 1.25rem; }
+}
+
+@media (min-width: 1280px) {
+  .Aside { display: block; }
+  .Content-body { margin-right: var(--vp-aside-width); }
+}
+</style>
+</head>
+<body>
+<div class="Layout">
+  <!-- ===== Navbar ===== -->
+  <header class="NavBar">
+    <button class="NavBar-menu-btn NavBar-icons" onclick="toggleSidebar()" aria-label="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a href="#" class="NavBar-title" onclick="navigate('home')">
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233451b2'/%3E%3Ctext x='16' y='22' text-anchor='middle' fill='white' font-size='18' font-weight='bold' font-family='sans-serif'%3EM%3C/text%3E%3C/svg%3E" alt="logo" onerror="this.style.display='none'">
+      MaoLaoAPI教程
+    </a>
+    <nav class="NavBar-nav">
+      <a href="#" class="active" data-nav="home" onclick="navigate('home')">首页</a>
+      <a href="#" data-nav="quick-start" onclick="navigate('quick-start')">快速开始</a>
+      <a href="#" data-nav="api-key" onclick="navigate('api-key')">API Key</a>
+      <a href="#" data-nav="billing-quota" onclick="navigate('billing-quota')">计费与额度</a>
+      <a href="#" data-nav="tools" onclick="navigate('tools')">工具接入</a>
+      <a href="#" data-nav="account" onclick="navigate('account')">账户与订阅</a>
+    </nav>
+    <div class="NavBar-spacer"></div>
+    <div class="NavBar-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      搜索文档
+      <kbd>K</kbd>
+    </div>
+    <div class="NavBar-icons">
+      <a href="https://github.com/moeacgx/maolaoapi-tutorial" target="_blank" rel="noopener" title="GitHub" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;color:var(--vp-c-text-2);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.604-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12 24 5.37 18.63 0 12 0z"/></svg>
+      </a>
+      <button onclick="toggleDark()" title="切换主题" aria-label="toggle dark mode">
+        <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Sidebar Overlay ===== -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="Sidebar" id="sidebar">
+    <div class="Sidebar-group">
+      <div class="Sidebar-group-title">入门</div>
+      <a href="#" class="Sidebar-link active" data-page="home" onclick="navigate('home')">产品介绍</a>
+      <a href="#" class="Sidebar-link" data-page="quick-start" onclick="navigate('quick-start')">快速开始</a>
+      <a href="#" class="Sidebar-link" data-page="api-key" onclick="navigate('api-key')">创建 API Key</a>
+      <a href="#" class="Sidebar-link" data-page="billing-quota" onclick="navigate('billing-quota')">计费与额度</a>
+    </div>
+    <div class="Sidebar-group">
+      <div class="Sidebar-group-title">API 教程</div>
+      <a href="#" class="Sidebar-link" data-page="images-tasks" onclick="navigate('images-tasks')">异步生图任务</a>
+    </div>
+    <div class="Sidebar-group">
+      <div class="Sidebar-group-title">工具接入</div>
+      <a href="#" class="Sidebar-link" data-page="tools" onclick="navigate('tools')">怎么选工具</a>
+      <a href="#" class="Sidebar-link" data-page="openai-compatible" onclick="navigate('openai-compatible')">OpenAI Compatible</a>
+      <a href="#" class="Sidebar-link" data-page="claude-code" onclick="navigate('claude-code')">Claude Code</a>
+      <a href="#" class="Sidebar-link" data-page="claude-cowork" onclick="navigate('claude-cowork')">Claude Coworks</a>
+      <a href="#" class="Sidebar-link" data-page="codex-cli" onclick="navigate('codex-cli')">Codex CLI</a>
+      <a href="#" class="Sidebar-link" data-page="cc-switch" onclick="navigate('cc-switch')">CC Switch</a>
+      <a href="#" class="Sidebar-link" data-page="opencode" onclick="navigate('opencode')">OpenCode</a>
+      <a href="#" class="Sidebar-link" data-page="cherry-studio" onclick="navigate('cherry-studio')">Cherry Studio</a>
+      <a href="#" class="Sidebar-link" data-page="github-copilot" onclick="navigate('github-copilot')">GitHub Copilot</a>
+      <a href="#" class="Sidebar-link" data-page="zed-editor" onclick="navigate('zed-editor')">Zed Editor</a>
+      <a href="#" class="Sidebar-link" data-page="cline" onclick="navigate('cline')">Cline</a>
+      <a href="#" class="Sidebar-link" data-page="chatbox" onclick="navigate('chatbox')">Chatbox</a>
+      <a href="#" class="Sidebar-link" data-page="workbuddy" onclick="navigate('workbuddy')">WorkBuddy</a>
+      <a href="#" class="Sidebar-link" data-page="open-webui" onclick="navigate('open-webui')">Open WebUI</a>
+      <a href="#" class="Sidebar-link" data-page="codebuddy" onclick="navigate('codebuddy')">CodeBuddy</a>
+      <a href="#" class="Sidebar-link" data-page="trae" onclick="navigate('trae')">Trae</a>
+      <a href="#" class="Sidebar-link" data-page="botgem" onclick="navigate('botgem')">BotGem</a>
+      <a href="#" class="Sidebar-link" data-page="lobehub" onclick="navigate('lobehub')">LobeHub</a>
+      <a href="#" class="Sidebar-link" data-page="opencat" onclick="navigate('opencat')">OpenCat</a>
+      <a href="#" class="Sidebar-link" data-page="nextchat" onclick="navigate('nextchat')">NextChat</a>
+    </div>
+    <div class="Sidebar-group">
+      <div class="Sidebar-group-title">进阶与排查</div>
+      <a href="#" class="Sidebar-link" data-page="hermes" onclick="navigate('hermes')">Hermes / OpenClaw 403 代理</a>
+      <a href="#" class="Sidebar-link" data-page="langchain" onclick="navigate('langchain')">LangChain / SDK</a>
+      <a href="#" class="Sidebar-link" data-page="llamaindex" onclick="navigate('llamaindex')">LlamaIndex / SDK</a>
+      <a href="#" class="Sidebar-link" data-page="troubleshooting" onclick="navigate('troubleshooting')">常见问题排查</a>
+    </div>
+    <div class="Sidebar-group">
+      <div class="Sidebar-group-title">账户与订阅</div>
+      <a href="#" class="Sidebar-link" data-page="account" onclick="navigate('account')">账户概览</a>
+      <a href="#" class="Sidebar-link" data-page="recharge" onclick="navigate('recharge')">充值余额</a>
+      <a href="#" class="Sidebar-link" data-page="subscription" onclick="navigate('subscription')">订阅套餐选择</a>
+      <a href="#" class="Sidebar-link" data-page="orders" onclick="navigate('orders')">订单与发票</a>
+      <a href="#" class="Sidebar-link" data-page="account-troubleshoot" onclick="navigate('account-troubleshoot')">账户问题排查</a>
+    </div>
+  </aside>
+
+  <!-- ===== Main Content ===== -->
+  <main class="Content">
+    <div class="Content-body">
+
+      <!-- ==================== HOME ==================== -->
+      <div class="page-section active" id="page-home">
+        <div class="VPHero">
+          <h1 class="name">MaoLao API 新手使用文档</h1>
+          <p class="text">从注册、创建 API Key、选择模型、异步生图到理解计费额度，按真实项目方式整理的一站式教程。</p>
+          <p class="tagline">推荐 API 地址：<code>https://api.maolaoapi.cc/v1</code>、<code>https://api.maolaoapi.com/v1</code></p>
+          <div class="actions">
+            <a href="#" class="VPButton-brand" onclick="navigate('quick-start')">快速开始</a>
+            <a href="#" class="VPButton-alt" onclick="navigate('tools')">查看工具教程</a>
+          </div>
+        </div>
+
+        <div class="VPFeatures">
+          <div class="VPFeature">
+            <div class="icon">📖</div>
+            <div class="title">面向新手</div>
+            <div class="details">尽量用直白步骤解释 API Key、Base URL、模型名、分组和额度，不假设你已经熟悉开发工具。</div>
+          </div>
+          <div class="VPFeature">
+            <div class="icon">📋</div>
+            <div class="title">内容清晰</div>
+            <div class="details">按注册、创建 API Key、客户端配置和问题排查拆分，适合第一次接触 API 的用户。</div>
+          </div>
+          <div class="VPFeature">
+            <div class="icon">🔧</div>
+            <div class="title">可维护项目</div>
+            <div class="details">使用 VitePress、异步数据脚本和 GitHub Pages 工作流组织，适合长期维护。</div>
+          </div>
+        </div>
+
+        <div class="VPHomeLinks">
+          <a href="#" class="VPHomeLink" onclick="navigate('quick-start')">
+            <div class="title">5 分钟跑通</div>
+            <div class="desc">从 Base URL、API Key 到第一次请求，按步骤完成最小可用配置。</div>
+          </a>
+          <a href="#" class="VPHomeLink" onclick="navigate('api-key')">
+            <div class="title">创建 API Key</div>
+            <div class="desc">按用途创建独立 Key，学会分组、额度上限和安全保存。</div>
+          </a>
+          <a href="#" class="VPHomeLink" onclick="navigate('tools')">
+            <div class="title">工具接入</div>
+            <div class="desc">Claude Code、Cherry Studio、Chatbox、OpenCode 等软件图文教程。</div>
+          </a>
+          <a href="#" class="VPHomeLink" onclick="navigate('account')">
+            <div class="title">账户订阅</div>
+            <div class="desc">充值、套餐、订单、额度异常和账户问题的处理步骤。</div>
+          </a>
+        </div>
+
+        <div class="VPHomeApi">
+          <p><strong>推荐 API 地址：</strong><code>https://api.maolaoapi.cc/v1</code>、<code>https://api.maolaoapi.com/v1</code></p>
+        </div>
+
+        <div class="VPDoc" style="max-width:752px;margin:0 auto;padding:0 48px 48px;">
+          <h2>MaoLao API 是什么</h2>
+          <p>MaoLao API 是一个 AI 模型聚合与分发网关。它把不同模型服务整理成兼容 OpenAI、Claude、Gemini 等客户端习惯的 API 调用方式，让你可以在一个控制台里管理模型、分组、额度和 API Key。</p>
+          <p>对新手来说，你可以先把它理解成三件事：</p>
+          <ol>
+            <li><strong>控制台</strong>：注册、登录、充值、查看额度、创建 API Key。</li>
+            <li><strong>API 地址</strong>：客户端或代码里填写的 Base URL，例如公开配置推荐的 API 域名。</li>
+            <li><strong>模型和分组</strong>：模型决定能力和基础消耗，分组决定线路、稳定性、适用客户端和倍率。</li>
+          </ol>
+
+          <h2>本教程适合谁</h2>
+          <ul>
+            <li>第一次使用 API Key 接入 AI 工具的人。</li>
+            <li>想把 MaoLao API 配进 Cherry Studio、Claude Code、Codex CLI 或自己代码里的人。</li>
+            <li>想弄懂模型倍率、分组倍率、固定消耗、额度消耗关系的人。</li>
+            <li>后续希望维护一份公开文档站的人。</li>
+          </ul>
+
+          <h2>阅读顺序</h2>
+          <p>建议从 <a href="#" onclick="navigate('quick-start')">快速开始</a> 开始，完成一次最小可用调用；然后阅读 <a href="#" onclick="navigate('api-key')">创建 API Key</a> 和 <a href="#" onclick="navigate('billing-quota')">计费与额度</a>。需要图片生成时，继续看 <a href="#" onclick="navigate('images-tasks')">异步生图任务</a>。如果你已经会配置客户端，可以直接进入 <a href="#" onclick="navigate('tools')">工具接入</a> 查看对应软件的图文教程。</p>
+        </div>
+      </div>
+
+      <!-- ==================== QUICK START ==================== -->
+      <div class="page-section" id="page-quick-start">
+        <div class="VPDoc">
+          <h1>快速开始</h1>
+          <p>这一页带你完成一次最小可用流程：注册登录、创建 API Key、选择 API 地址和模型，然后发起第一次请求。</p>
+
+          <h2>1. 注册并登录</h2>
+          <p>打开 <a href="https://maolaoapi.com" target="_blank">MaoLao API 控制台</a>，按页面提示注册或登录账号。公开配置显示当前支持密码登录、GitHub OAuth、LinuxDo OAuth、Passkey 等方式，实际可用入口以登录页为准。</p>
+          <p>登录后进入控制台，先确认账户余额或额度状态。如果账号没有额度，请先按控制台里的充值、兑换码或套餐入口完成额度准备。</p>
+
+          <h2>2. 选择 API 地址</h2>
+          <p>公开配置里给出了两个常用 API 地址：</p>
+          <ul>
+            <li><code>https://api.maolaoapi.cc/v1</code>：国内外自动分流，优先推荐。</li>
+            <li><code>https://api.maolaoapi.com/v1</code>：直连备用节点。</li>
+          </ul>
+          <p>大多数 OpenAI 兼容客户端会把这个值称为 <code>Base URL</code>、<code>API Base</code> 或 <code>Endpoint</code>。</p>
+
+          <h2>3. 创建 API Key</h2>
+          <p>进入 <a href="https://maolaoapi.com/console/token" target="_blank">令牌/API Key 页面</a>，创建一个新的 Key。新手建议：</p>
+          <ul>
+            <li>名称写清用途，例如 <code>cherry-studio-main</code> 或 <code>codex-cli-test</code>。</li>
+            <li>分组优先选择 <code>auto</code>，让系统自动选择可用分组。</li>
+            <li>如只用于某个客户端或模型，可以之后再创建单独 Key，避免混用。</li>
+            <li>Key 只显示一次时要妥善保存，不要发给别人。</li>
+          </ul>
+          <p>更详细的说明见 <a href="#" onclick="navigate('api-key')">创建 API Key</a>。</p>
+
+          <h2>4. 选择模型</h2>
+          <p>在 MaoLao API 控制台或目标软件的模型选择框中，选择当前可用模型。新手可以按用途选择：</p>
+          <ul>
+            <li>日常对话和文本生成：搜索 <code>gpt</code>、<code>claude</code>、<code>deepseek</code>。</li>
+            <li>代码协作：搜索 <code>codex</code>、<code>claude-sonnet</code>。</li>
+            <li>图片生成：搜索 <code>image</code>，并注意固定消耗模型通常按次计费。</li>
+          </ul>
+          <p>模型是否可用还取决于你创建 Key 时选择的分组。</p>
+
+          <h2>5. 发起第一次请求</h2>
+          <p>下面是 OpenAI 兼容接口的最小示例。把 <code>YOUR_API_KEY</code> 换成你自己的 Key，把模型名换成控制台或目标软件当前支持的模型。</p>
+          <pre><code>curl https://api.maolaoapi.cc/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4-mini",
+    "messages": [
+      { "role": "user", "content": "用一句话介绍 MaoLao API" }
+    ]
+  }'</code></pre>
+          <p>如果你使用的是支持 OpenAI 格式的客户端，通常只需要填三项：</p>
+          <table>
+            <thead><tr><th>配置项</th><th>填什么</th></tr></thead>
+            <tbody>
+              <tr><td>API Key</td><td>控制台创建的 Key</td></tr>
+              <tr><td>Base URL</td><td><code>https://api.maolaoapi.cc/v1</code></td></tr>
+              <tr><td>Model</td><td>控制台或目标软件支持的模型名</td></tr>
+            </tbody>
+          </table>
+
+          <h2>常见第一次失败原因</h2>
+          <ul>
+            <li><strong>401 未授权</strong>：API Key 填错、复制时多了空格，或 Key 已被禁用。</li>
+            <li><strong>模型不可用</strong>：模型名拼错，或当前 Key 的分组不支持该模型。</li>
+            <li><strong>额度不足</strong>：账户余额不足，或套餐额度已经用完。</li>
+            <li><strong>请求格式不兼容</strong>：客户端选择了错误的接口类型，例如把 Claude 原生格式发到了 OpenAI 路径。</li>
+          </ul>
+
+          <div class="Pager">
+            <a href="#" class="prev" onclick="navigate('home')"><span class="desc">上一页</span><span class="title">产品介绍</span></a>
+            <a href="#" class="next" onclick="navigate('api-key')"><span class="desc">下一页</span><span class="title">创建 API Key</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== API KEY ==================== -->
+      <div class="page-section" id="page-api-key">
+        <div class="VPDoc">
+          <h1>创建 API Key</h1>
+          <p>API Key 是你调用 MaoLao API 的凭证。任何拿到 Key 的人都可能消耗你的额度，所以它应该像密码一样保管。</p>
+
+          <h2>创建步骤</h2>
+          <ol>
+            <li>打开 <a href="https://maolaoapi.com/console/token" target="_blank">令牌页面</a>。</li>
+            <li>点击创建或添加令牌。</li>
+            <li>填写名称，建议用用途命名，例如 <code>claude-code</code>、<code>cherry-studio</code>、<code>test-script</code>。</li>
+            <li>选择分组。新手优先选择 <code>auto</code>，需要固定线路时再选择具体分组。</li>
+            <li>根据需要设置额度限制、过期时间或允许模型范围。</li>
+            <li>创建后复制 Key，并保存到你的密码管理器或本地安全位置。</li>
+          </ol>
+
+          <div class="custom-block warning">
+            <p class="custom-block-title">⚠️ WARNING</p>
+            <p>不要把 API Key 写进公开仓库、截图、聊天记录或文档示例。提交代码前请检查 <code>.env</code>、配置文件和终端历史。</p>
+          </div>
+
+          <h2>分组怎么选</h2>
+          <p>公开配置显示 MaoLao API 支持多个分组，并且默认启用自动分组。对新手来说：</p>
+          <ul>
+            <li><code>auto</code>：适合大多数情况，失败时可按配置切换可用分组。</li>
+            <li><code>Codex-Basic</code> / <code>Codex-Value</code> / <code>Codex-Official</code>：偏 Codex 场景，不同分组在消耗、稳定性和限制上不同。</li>
+            <li><code>CC-MAX</code> / <code>CC-KIRO</code>：偏 Claude Code 或 Anthropic 相关场景。</li>
+            <li><code>生图视频专用分组</code>：适合图像或视频任务。</li>
+          </ul>
+          <p>具体名称和倍率会变化，最终以 MaoLao API 控制台当前显示的可用分组和模型为准。</p>
+
+          <h2>建议的 Key 管理方式</h2>
+          <table>
+            <thead><tr><th>场景</th><th>建议</th></tr></thead>
+            <tbody>
+              <tr><td>日常客户端</td><td>单独创建一个长期 Key，设置合理额度上限</td></tr>
+              <tr><td>测试脚本</td><td>创建低额度 Key，测试完可禁用</td></tr>
+              <tr><td>多个客户端</td><td>每个客户端单独一个 Key，方便排查用量</td></tr>
+              <tr><td>团队共享</td><td>不共享个人 Key，按成员或项目分开创建</td></tr>
+              <tr><td>高风险实验</td><td>使用单独 Key 和独立额度上限</td></tr>
+            </tbody>
+          </table>
+
+          <h2>在代码中使用 Key</h2>
+          <p>不要直接把 Key 写死在代码里。推荐放在环境变量：</p>
+          <pre><code>MAOLAO_API_KEY=sk-your-key
+MAOLAO_BASE_URL=https://api.maolaoapi.cc/v1</code></pre>
+          <p>Node.js 示例：</p>
+          <pre><code>const response = await fetch(`${process.env.MAOLAO_BASE_URL}/chat/completions`, {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${process.env.MAOLAO_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "gpt-5.4-mini",
+    messages: [{ role: "user", content: "你好" }],
+  }),
+});
+
+const data = await response.json();
+console.log(data);</code></pre>
+
+          <h2>什么时候需要重新生成 Key</h2>
+          <ul>
+            <li>怀疑 Key 泄露。</li>
+            <li>Key 被写入公开代码仓库。</li>
+            <li>某个客户端异常消耗额度。</li>
+            <li>想把旧分组迁移到新分组。</li>
+            <li>想按不同用途重新拆分额度限制。</li>
+          </ul>
+
+          <div class="Pager">
+            <a href="#" class="prev" onclick="navigate('quick-start')"><span class="desc">上一页</span><span class="title">快速开始</span></a>
+            <a href="#" class="next" onclick="navigate('billing-quota')"><span class="desc">下一页</span><span class="title">计费与额度</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== BILLING & QUOTA ==================== -->
+      <div class="page-section" id="page-billing-quota">
+        <div class="VPDoc">
+          <h1>计费与额度</h1>
+          <p>MaoLao API 的费用理解可以拆成三层：账户额度、模型消耗、分组影响。</p>
+
+          <h2>额度是什么</h2>
+          <p>控制台里通常会用 <code>quota</code> 或余额来展示可用额度。你可以先把它理解成账户里的可用余额：调用模型会消耗它，充值或套餐会增加它。</p>
+          <p>你在控制台里看到的余额、套餐额度或兑换额度，最终都会在调用模型时被扣减。不同模型、不同分组、不同输入输出长度都会影响扣减速度。</p>
+
+          <h2>文本模型的常见消耗逻辑</h2>
+          <p>文本模型通常按 token 或等价用量计费。可以先用这个简化公式理解：</p>
+          <pre><code>最终消耗 ≈ token 数量 × 模型倍率 × 分组倍率 × 输出/缓存等修正系数</code></pre>
+          <p>其中：</p>
+          <ul>
+            <li><strong>输入 token</strong>：你发给模型的消息、系统提示词、上下文。</li>
+            <li><strong>输出 token</strong>：模型生成的回复，通常比输入更贵或有单独倍率。</li>
+            <li><strong>模型倍率</strong>：不同模型本身消耗不同。</li>
+            <li><strong>分组倍率</strong>：线路、渠道、稳定性或客户端适配造成的消耗差异。</li>
+            <li><strong>缓存倍率</strong>：部分 Claude 或长上下文场景会涉及缓存读取、缓存创建等额外规则。</li>
+          </ul>
+
+          <h2>固定消耗模型</h2>
+          <p>图片、视频或某些任务型模型可能不是按 token 计费，而是按请求、秒数或任务计费。控制台里这类模型可能会显示类似：</p>
+          <pre><code>0.06 / request</code></pre>
+          <p>这表示每次请求按固定额度扣减，具体是否还受分辨率、质量、时长影响，需要以控制台显示和模型说明为准。</p>
+
+          <h2>分组怎么影响消耗</h2>
+          <p>分组不是单纯的分类标签，它可能影响：</p>
+          <ul>
+            <li>最终倍率。</li>
+            <li>请求走哪类渠道。</li>
+            <li>是否适合 Claude Code、Codex CLI、生图视频等特定客户端。</li>
+            <li>是否允许某些高风险或特殊用途。</li>
+            <li>稳定性、延迟和失败切换策略。</li>
+          </ul>
+          <p>新手建议优先使用 <code>auto</code>。当你明确知道自己要用某个客户端或某条线路时，再创建单独 Key 并绑定具体分组。</p>
+
+          <h2>控制成本的建议</h2>
+          <ol>
+            <li>先用低倍率模型测试流程。</li>
+            <li>给测试 Key 设置额度上限。</li>
+            <li>批量任务先小样本运行，确认结果和消耗后再放大。</li>
+            <li>长文本任务注意上下文长度，没必要的历史消息要清理。</li>
+            <li>图片和视频任务先看固定消耗，再确认分辨率和质量参数。</li>
+            <li>多客户端分开 Key，方便定位哪个工具消耗最多。</li>
+          </ol>
+
+          <h2>额度异常排查</h2>
+          <table>
+            <thead><tr><th>现象</th><th>可能原因</th></tr></thead>
+            <tbody>
+              <tr><td>消耗比预期高</td><td>使用了高倍率模型或高倍率分组</td></tr>
+              <tr><td>一次请求扣很多</td><td>上下文太长，或输出特别长</td></tr>
+              <tr><td>图片任务扣费明显</td><td>固定消耗按次计费，可能还受规格影响</td></tr>
+              <tr><td>明明没用却有消耗</td><td>某个客户端在后台重试或自动同步</td></tr>
+              <tr><td>请求失败也有记录</td><td>客户端或网关可能发生了重试，请查看日志</td></tr>
+            </tbody>
+          </table>
+
+          <div class="Pager">
+            <a href="#" class="prev" onclick="navigate('api-key')"><span class="desc">上一页</span><span class="title">创建 API Key</span></a>
+            <a href="#" class="next" onclick="navigate('images-tasks')"><span class="desc">下一页</span><span class="title">异步生图任务</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== TOOLS ==================== -->
+      <div class="page-section" id="page-tools">
+        <div class="VPDoc">
+          <h1>工具接入</h1>
+          <p>这一组文档用于把 MaoLao API 接入常见客户端和开发工具。新手不要从软件下载表开始乱点，建议先看 <a href="#" onclick="navigate('tools')">怎么选工具</a>，确定自己要配置哪一类软件。</p>
+
+          <h2>先走这条新手路线</h2>
+          <table>
+            <thead><tr><th>顺序</th><th>要做什么</th><th>对应页面</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>按聊天、写代码、VS Code、自部署等用途选择教程</td><td>怎么选工具</td></tr>
+              <tr><td>2</td><td>为每个软件单独创建 API Key，方便排查和控制额度</td><td><a href="#" onclick="navigate('api-key')">创建 API Key</a></td></tr>
+              <tr><td>3</td><td>先弄懂 Base URL、API Key、Model 三个核心字段</td><td>OpenAI Compatible</td></tr>
+              <tr><td>4</td><td>遇到无响应、模型不存在、频繁断线时按清单排查</td><td>常见问题排查</td></tr>
+            </tbody>
+          </table>
+
+          <h2>通用填写规则</h2>
+          <p>除非单页特别说明，默认使用 OpenAI 兼容配置：</p>
+          <table>
+            <thead><tr><th>配置项</th><th>推荐值</th></tr></thead>
+            <tbody>
+              <tr><td>Base URL</td><td><code>https://api.maolaoapi.cc/v1</code></td></tr>
+              <tr><td>备用 Base URL</td><td><code>https://api.maolaoapi.com/v1</code></td></tr>
+              <tr><td>API Key</td><td>控制台令牌页创建的 Key</td></tr>
+              <tr><td>模型名</td><td>根据目标软件支持的模型填写</td></tr>
+            </tbody>
+          </table>
+
+          <p>接入前建议先完成三件事：</p>
+          <ol>
+            <li>在 <a href="#" onclick="navigate('api-key')">创建 API Key</a> 页面创建独立 Key。</li>
+            <li>在对应软件教程中确认接口格式、模型填写位置和分组要求。</li>
+            <li>第一次配置时优先使用 <code>auto</code> 分组，跑通后再按工具单独拆 Key。</li>
+          </ol>
+
+          <h2>小白图文配置方法</h2>
+          <p>每篇软件教程都按这个方式读：</p>
+          <ol>
+            <li>先看下载地址，确认软件来源。</li>
+            <li>再看准备工作，把 Key、Base URL、模型 ID 准备好。</li>
+            <li>对照图片逐步填写，不要跳过中间步骤。</li>
+            <li>保存后只发一句"请回复 ok"测试。</li>
+            <li>失败时先看本页底部排查顺序，再看对应软件的常见问题。</li>
+          </ol>
+
+          <h2>软件下载地址速查</h2>
+          <p>优先从官网或官方 GitHub 下载，不建议从第三方软件下载站下载。</p>
+          <table>
+            <thead><tr><th>软件</th><th>官方下载地址</th><th>新手建议</th></tr></thead>
+            <tbody>
+              <tr><td>Claude Code</td><td><a href="https://docs.anthropic.com/en/docs/claude-code/setup" target="_blank">Claude Code 安装文档</a></td><td>按官方文档安装命令行工具</td></tr>
+              <tr><td>Claude Coworks</td><td><a href="https://claude.com" target="_blank">Claude 官网</a> / <a href="https://claude.com/download" target="_blank">下载页</a></td><td>更新到支持开发者模式和第三方推理供应商的版本</td></tr>
+              <tr><td>Codex CLI</td><td><a href="https://developers.openai.com/codex/cli/" target="_blank">Codex CLI 官方文档</a> / <a href="https://github.com/openai/codex" target="_blank">GitHub</a></td><td>先看官方文档，再按系统安装</td></tr>
+              <tr><td>OpenCode</td><td><a href="https://opencode.ai" target="_blank">opencode.ai</a> / <a href="https://github.com/sst/opencode" target="_blank">GitHub</a></td><td>适合命令行或代码智能体场景</td></tr>
+              <tr><td>Cherry Studio</td><td><a href="https://github.com/CherryHQ/cherry-studio/releases" target="_blank">GitHub Releases</a></td><td>下载最新稳定版</td></tr>
+              <tr><td>Chatbox</td><td><a href="https://chatboxai.app/en" target="_blank">chatboxai.app</a></td><td>官网会提供 Windows、macOS、Linux 和移动端</td></tr>
+              <tr><td>GitHub Copilot</td><td><a href="https://docs.github.com/copilot/get-started/quickstart" target="_blank">官方快速开始</a></td><td>不能直接填写 MaoLao API Key</td></tr>
+              <tr><td>Zed Editor</td><td><a href="https://zed.dev/download" target="_blank">zed.dev/download</a></td><td>安装后在设置里找 AI / Provider</td></tr>
+              <tr><td>Cline</td><td><a href="https://cline.bot" target="_blank">cline.bot</a> / <a href="https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev" target="_blank">VS Code 扩展</a></td><td>适合 VS Code 用户</td></tr>
+              <tr><td>Open WebUI</td><td><a href="https://docs.openwebui.com/getting-started/" target="_blank">安装文档</a> / <a href="https://github.com/open-webui/open-webui" target="_blank">GitHub</a></td><td>适合 Docker 或服务器部署</td></tr>
+              <tr><td>CodeBuddy</td><td><a href="https://www.codebuddy.ai/ide" target="_blank">codebuddy.ai/ide</a></td><td>下载 CodeBuddy IDE 或按官方文档安装插件</td></tr>
+              <tr><td>Trae</td><td><a href="https://www.trae.ai/download" target="_blank">trae.ai/download</a></td><td>进入下载中心选择对应系统</td></tr>
+              <tr><td>CC Switch</td><td><a href="https://ccswitch.io/en/" target="_blank">官网</a> / <a href="https://github.com/farion1231/cc-switch/releases" target="_blank">GitHub Releases</a></td><td>只从官网或官方 GitHub 下载</td></tr>
+              <tr><td>LlamaIndex</td><td><a href="https://developers.llamaindex.ai" target="_blank">官方文档</a> / <a href="https://github.com/run-llama/llama_index" target="_blank">GitHub</a></td><td>开发框架，不是聊天客户端</td></tr>
+              <tr><td>BotGem</td><td><a href="https://botgem.com" target="_blank">botgem.com</a></td><td>看当前版本是否支持自定义 API</td></tr>
+              <tr><td>WorkBuddy</td><td><a href="https://copilot.tencent.com/work/" target="_blank">官方入口</a></td><td>企业版可能限制自定义 Provider</td></tr>
+              <tr><td>LobeHub / LobeChat</td><td><a href="https://lobehub.com" target="_blank">lobehub.com</a> / <a href="https://github.com/lobehub/lobe-chat" target="_blank">GitHub</a></td><td>适合网页聊天或自部署</td></tr>
+              <tr><td>OpenCat</td><td><a href="https://opencat.app" target="_blank">opencat.app</a></td><td>移动端和桌面端能力可能不同</td></tr>
+              <tr><td>NextChat</td><td><a href="https://nextchat.club" target="_blank">nextchat.club</a> / <a href="https://github.com/ChatGPTNextWeb/NextChat" target="_blank">GitHub</a></td><td>适合网页版使用或自部署；新手优先用官方网页</td></tr>
+            </tbody>
+          </table>
+
+          <h2>快速判断用哪个教程</h2>
+          <table>
+            <thead><tr><th>你要接入的工具</th><th>看哪一页</th></tr></thead>
+            <tbody>
+              <tr><td>通用 OpenAI 接口、自写代码</td><td>OpenAI Compatible</td></tr>
+              <tr><td>Claude Code</td><td>Claude Code</td></tr>
+              <tr><td>Claude Coworks</td><td>Claude Coworks</td></tr>
+              <tr><td>Codex CLI</td><td>Codex CLI</td></tr>
+              <tr><td>OpenCode</td><td>OpenCode</td></tr>
+              <tr><td>Cherry Studio</td><td>Cherry Studio</td></tr>
+              <tr><td>Chatbox</td><td>Chatbox</td></tr>
+              <tr><td>GitHub Copilot</td><td>GitHub Copilot</td></tr>
+              <tr><td>Zed Editor</td><td>Zed Editor</td></tr>
+              <tr><td>Cline</td><td>Cline</td></tr>
+              <tr><td>Open WebUI</td><td>Open WebUI</td></tr>
+              <tr><td>CodeBuddy</td><td>CodeBuddy</td></tr>
+              <tr><td>Trae</td><td>Trae</td></tr>
+              <tr><td>CC Switch</td><td>CC Switch</td></tr>
+              <tr><td>BotGem</td><td>BotGem</td></tr>
+              <tr><td>WorkBuddy</td><td>WorkBuddy</td></tr>
+              <tr><td>LobeHub / LobeChat</td><td>LobeHub / LobeChat</td></tr>
+              <tr><td>OpenCat</td><td>OpenCat</td></tr>
+              <tr><td>NextChat</td><td>NextChat</td></tr>
+              <tr><td>Hermes / OpenClaw 遇到 403</td><td>Hermes / OpenClaw 403 代理</td></tr>
+              <tr><td>LangChain、OpenAI SDK、脚本开发</td><td>LangChain / SDK</td></tr>
+              <tr><td>LlamaIndex 知识库开发</td><td>LlamaIndex / SDK</td></tr>
+            </tbody>
+          </table>
+
+          <h2>通用排查顺序</h2>
+          <p>如果接入失败，先按这个顺序查：</p>
+          <ol>
+            <li>Base URL 是否带 <code>/v1</code>。</li>
+            <li>API Key 是否来自 MaoLao API 控制台，复制时没有空格。</li>
+            <li>模型名是否完整一致。</li>
+            <li>当前 Key 的分组是否支持该模型。</li>
+            <li>客户端选择的是 OpenAI、Anthropic 还是其他接口格式。</li>
+          </ol>
+
+          <div class="Pager">
+            <a href="#" class="prev" onclick="navigate('home')"><span class="desc">下一页</span><span class="title">产品介绍</span></a>
+            <a href="#" class="next" onclick="navigate('account')"><span class="desc">下一页</span><span class="title">账户概览</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ACCOUNT ==================== -->
+      <div class="page-section" id="page-account">
+        <div class="VPDoc">
+          <h1>账户概览</h1>
+          <p>账户与订阅页面主要关注 MaoLao API 的余额、充值、套餐、订单和发票问题。</p>
+
+          <h2>你需要关注的账户信息</h2>
+          <table>
+            <thead><tr><th>项目</th><th>用途</th></tr></thead>
+            <tbody>
+              <tr><td>余额 / 额度</td><td>判断还能调用多少模型</td></tr>
+              <tr><td>当前套餐</td><td>判断是否有周期额度或特殊分组权限</td></tr>
+              <tr><td>API Key 用量</td><td>排查哪个工具消耗额度</td></tr>
+              <tr><td>订单记录</td><td>查询充值、套餐购买状态</td></tr>
+              <tr><td>发票信息</td><td>需要报销或记录时使用</td></tr>
+            </tbody>
+          </table>
+
+          <h2>新手建议</h2>
+          <p>刚开始使用时，不建议直接把主 Key 放进很多工具。更稳妥的方式是：</p>
+          <ol>
+            <li>先充值或开通适合自己的套餐。</li>
+            <li>为每个工具创建单独 API Key。</li>
+            <li>给测试 Key 设置额度上限。</li>
+            <li>每隔一段时间查看日志和余额变化。</li>
+          </ol>
+
+          <h2>相关页面</h2>
+          <ul>
+            <li><a href="#" onclick="navigate('recharge')">充值余额</a></li>
+            <li><a href="#" onclick="navigate('subscription')">订阅套餐选择</a></li>
+            <li><a href="#" onclick="navigate('orders')">订单与发票</a></li>
+            <li><a href="#" onclick="navigate('account-troubleshoot')">账户问题排查</a></li>
+          </ul>
+
+          <div class="Pager">
+            <a href="#" class="prev" onclick="navigate('troubleshooting')"><span class="desc">上一页</span><span class="title">常见问题排查</span></a>
+            <a href="#" class="next" onclick="navigate('recharge')"><span class="desc">下一页</span><span class="title">充值余额</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== Placeholder pages ==================== -->
+      <div class="page-section" id="page-images-tasks"><div class="VPDoc"><h1>异步生图任务</h1><p>本页面内容请参考原文档站。</p><div class="Pager"><a href="#" class="prev" onclick="navigate('billing-quota')"><span class="desc">上一页</span><span class="title">计费与额度</span></a><a href="#" class="next" onclick="navigate('tools')"><span class="desc">下一页</span><span class="title">工具接入</span></a></div></div></div>
+      <div class="page-section" id="page-openai-compatible"><div class="VPDoc"><h1>OpenAI Compatible</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-claude-code"><div class="VPDoc"><h1>Claude Code</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-claude-cowork"><div class="VPDoc"><h1>Claude Coworks</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-codex-cli"><div class="VPDoc"><h1>Codex CLI</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-cc-switch"><div class="VPDoc"><h1>CC Switch</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-opencode"><div class="VPDoc"><h1>OpenCode</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-cherry-studio"><div class="VPDoc"><h1>Cherry Studio</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-github-copilot"><div class="VPDoc"><h1>GitHub Copilot</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-zed-editor"><div class="VPDoc"><h1>Zed Editor</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-cline"><div class="VPDoc"><h1>Cline</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-chatbox"><div class="VPDoc"><h1>Chatbox</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-workbuddy"><div class="VPDoc"><h1>WorkBuddy</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-open-webui"><div class="VPDoc"><h1>Open WebUI</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-codebuddy"><div class="VPDoc"><h1>CodeBuddy</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-trae"><div class="VPDoc"><h1>Trae</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-botgem"><div class="VPDoc"><h1>BotGem</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-lobehub"><div class="VPDoc"><h1>LobeHub</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-opencat"><div class="VPDoc"><h1>OpenCat</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-nextchat"><div class="VPDoc"><h1>NextChat</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-hermes"><div class="VPDoc"><h1>Hermes / OpenClaw 403 代理</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-langchain"><div class="VPDoc"><h1>LangChain / SDK</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-llamaindex"><div class="VPDoc"><h1>LlamaIndex / SDK</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-troubleshooting"><div class="VPDoc"><h1>常见问题排查</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-recharge"><div class="VPDoc"><h1>充值余额</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-subscription"><div class="VPDoc"><h1>订阅套餐选择</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-orders"><div class="VPDoc"><h1>订单与发票</h1><p>本页面内容请参考原文档站。</p></div></div>
+      <div class="page-section" id="page-account-troubleshoot"><div class="VPDoc"><h1>账户问题排查</h1><p>本页面内容请参考原文档站。</p></div></div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Back to top -->
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="返回顶部">↑</button>
+
+<script>
+// ===== Navigation =====
+function navigate(pageId) {
+  // Hide all sections
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  // Show target
+  const target = document.getElementById('page-' + pageId);
+  if (target) target.classList.add('active');
+
+  // Update sidebar links
+  document.querySelectorAll('.Sidebar-link').forEach(l => {
+    l.classList.toggle('active', l.dataset.page === pageId);
+  });
+
+  // Update nav links
+  document.querySelectorAll('.NavBar-nav a').forEach(a => {
+    a.classList.toggle('active', a.dataset.nav === pageId);
+  });
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Close sidebar on mobile
+  closeSidebar();
+}
+
+// ===== Sidebar toggle =====
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+
+// ===== Dark mode =====
+function toggleDark() {
+  document.documentElement.classList.toggle('dark');
+  const isDark = document.documentElement.classList.contains('dark');
+  localStorage.setItem('vp-dark', isDark ? 'true' : 'false');
+  document.querySelector('.sun-icon').style.display = isDark ? 'none' : 'block';
+  document.querySelector('.moon-icon').style.display = isDark ? 'block' : 'none';
+}
+
+// Init dark mode
+if (localStorage.getItem('vp-dark') === 'true' || 
+    (!localStorage.getItem('vp-dark') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+  document.documentElement.classList.add('dark');
+  document.querySelector('.sun-icon').style.display = 'none';
+  document.querySelector('.moon-icon').style.display = 'block';
+}
+
+// ===== Back to top =====
+window.addEventListener('scroll', () => {
+  document.getElementById('backToTop').classList.toggle('visible', window.scrollY > 300);
+});
+
+// ===== Keyboard shortcut =====
+document.addEventListener('keydown', e => {
+  if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    document.querySelector('.NavBar-search').focus();
+  }
+});
+</script>
+</body>
+</html>

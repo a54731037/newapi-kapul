@@ -1,0 +1,723 @@
+<!-- KaPul API 文档 - 嵌入版 -->
+<style>
+.mlp-root{--mlp-text:#111827;--mlp-text-secondary:#4b5563;--mlp-text-tertiary:#9ca3af;--mlp-border:#e5e7eb;--mlp-border-light:#f3f4f6;--mlp-bg:#ffffff;--mlp-bg-soft:#f9fafb;--mlp-bg-hover:#f3f4f6;--mlp-bg-active:#e5e7eb;--mlp-bg-code:#f9fafb;--mlp-link:#4f46e5;--mlp-link-hover:#4338ca;--mlp-accent:#4f46e5;--mlp-accent-soft:#eef2ff;--mlp-red:#dc2626;--mlp-red-bg:#fef2f2;--mlp-red-border:#fecaca;--mlp-orange:#ea580c;--mlp-orange-bg:#fff7ed;--mlp-orange-border:#fed7aa;--mlp-green:#059669;--mlp-green-bg:#ecfdf5;--mlp-green-border:#a7f3d0;--mlp-blue:#2563eb;--mlp-blue-bg:#eff6ff;--mlp-blue-border:#bfdbfe;--mlp-mono:"SF Mono","Fira Code",Menlo,Consolas,monospace;--mlp-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mlp-radius:6px;--mlp-shadow:0 1px 2px rgba(0,0,0,.04);--mlp-shadow-md:0 4px 12px rgba(0,0,0,.06);--mlp-toc-width:200px}
+.dark .mlp-root{--mlp-text:#f9fafb;--mlp-text-secondary:#d1d5db;--mlp-text-tertiary:#6b7280;--mlp-border:#1f2937;--mlp-border-light:#111827;--mlp-bg:#0d1117;--mlp-bg-soft:#111827;--mlp-bg-hover:#1f2937;--mlp-bg-active:#374151;--mlp-bg-code:#111827;--mlp-link:#818cf8;--mlp-link-hover:#a5b4fc;--mlp-accent:#818cf8;--mlp-accent-soft:#1e1b4b;--mlp-red:#f87171;--mlp-red-bg:#450a0a;--mlp-red-border:#7f1d1d;--mlp-orange:#fb923c;--mlp-orange-bg:#431407;--mlp-orange-border:#7c2d12;--mlp-green:#34d399;--mlp-green-bg:#022c22;--mlp-green-border:#064e3b;--mlp-blue:#60a5fa;--mlp-blue-bg:#0c1a3a;--mlp-blue-border:#1e3a5f}
+.mlp-root{all:initial}.mlp-root,.mlp-root *,.mlp-root ::before,.mlp-root ::after{box-sizing:border-box}
+.mlp-root{display:block;font-family:var(--mlp-font);font-size:15px;line-height:1.7;color:var(--mlp-text);background:var(--mlp-bg);-webkit-font-smoothing:antialiased;margin:0;padding:0}
+.mlp-root a{color:var(--mlp-link);text-decoration:none;transition:color .15s}.mlp-root a:hover{color:var(--mlp-link-hover);text-decoration:underline}
+.mlp-root strong{font-weight:600;color:var(--mlp-text)}.mlp-root img,.mlp-root svg{max-width:100%}
+.mlp-layout{display:flex;align-items:flex-start;width:100%;max-width:none;margin:0;padding:0 40px;position:relative}
+.mlp-toc{width:var(--mlp-toc-width);flex-shrink:0;position:sticky;top:0;padding:44px 0 48px 0;max-height:100vh;overflow-y:auto;border-right:1px solid var(--mlp-border-light)}
+.mlp-toc::-webkit-scrollbar{width:3px}.mlp-toc::-webkit-scrollbar-thumb{background:var(--mlp-border);border-radius:3px}
+.mlp-toc-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--mlp-text-tertiary);padding:0 12px 12px;margin:0}
+.mlp-toc-list{list-style:none;margin:0;padding:0}.mlp-toc-list li{margin:0}
+.mlp-toc-list>li>a{display:flex;align-items:center;gap:6px;padding:5px 12px;margin:1px 4px;font-size:13px;line-height:1.5;color:var(--mlp-text-secondary);text-decoration:none;border-radius:4px;transition:all .15s;font-weight:400}
+.mlp-toc-list>li>a:hover{background:var(--mlp-bg-hover);color:var(--mlp-text);text-decoration:none}
+.mlp-toc-icon{width:15px;height:15px;border-radius:3px;flex-shrink:0;object-fit:contain;opacity:.85}
+.mlp-toc-list>li>a:hover .mlp-toc-icon{opacity:1}
+.mlp-tool-icon{width:18px;height:18px;border-radius:4px;flex-shrink:0;object-fit:contain;vertical-align:-4px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.mlp-toc-sublist{list-style:none;margin:0;padding:0}
+.mlp-toc-sublist a{display:flex;align-items:center;gap:6px;padding:3px 12px 3px 26px;font-size:12px;line-height:1.5;color:var(--mlp-text-tertiary);text-decoration:none;border-radius:4px;margin:0 4px;transition:all .15s}
+.mlp-toc-sublist a:hover{background:var(--mlp-bg-hover);color:var(--mlp-text-secondary);text-decoration:none}
+.mlp-toc-sublist a:hover .mlp-toc-icon{opacity:1}
+.mlp-content{flex:1;min-width:0;padding:44px 48px 80px 48px}
+.mlp-root h1{font-size:2.25em;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:0 0 12px;color:var(--mlp-text)}
+.mlp-root h2{font-size:1.5em;font-weight:700;letter-spacing:-.01em;line-height:1.3;margin:48px 0 16px;padding-top:24px;border-top:1px solid var(--mlp-border);color:var(--mlp-text)}
+.mlp-root h2:first-of-type{margin-top:0;padding-top:0;border-top:none}
+.mlp-root h3{font-size:1.15em;font-weight:600;line-height:1.4;margin:32px 0 10px;color:var(--mlp-text)}
+.mlp-root h4{font-size:1em;font-weight:600;line-height:1.45;margin:24px 0 8px;color:var(--mlp-text-secondary)}
+.mlp-root p{margin:0 0 14px;color:var(--mlp-text-secondary);font-size:.9375rem}
+.mlp-root ul,.mlp-root ol{margin:0 0 14px;padding-left:1.6em}
+.mlp-root li{margin:5px 0;color:var(--mlp-text-secondary);font-size:.9375rem}.mlp-root li::marker{color:var(--mlp-text-tertiary)}
+.mlp-root code{font-family:var(--mlp-mono);font-size:.85em;background:var(--mlp-bg-code);color:#be185d;padding:.15em .4em;border-radius:4px;border:1px solid var(--mlp-border);font-weight:500}
+.dark .mlp-root code{color:#f472b6}
+.mlp-root pre{margin:0 0 18px;padding:18px 22px;border-radius:var(--mlp-radius);background:var(--mlp-bg-code);border:1px solid var(--mlp-border);overflow-x:auto;font-size:.84em;line-height:1.55;box-shadow:var(--mlp-shadow)}
+.mlp-root pre code{background:none;padding:0;border:none;color:var(--mlp-text);font-size:inherit;font-weight:400}
+.mlp-table-wrap{overflow-x:auto;margin:0 0 18px;border-radius:var(--mlp-radius);border:1px solid var(--mlp-border);box-shadow:var(--mlp-shadow)}
+.mlp-root table{width:100%;border-collapse:collapse;font-size:.875em}
+.mlp-root thead{background:var(--mlp-bg-soft);border-bottom:2px solid var(--mlp-border)}.mlp-root th{padding:10px 14px;text-align:left;font-weight:600;font-size:.8em;color:var(--mlp-text-secondary);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.mlp-root td{padding:9px 14px;text-align:left;color:var(--mlp-text-secondary);border-bottom:1px solid var(--mlp-border-light)}
+.mlp-root tr:last-child td{border-bottom:none}.mlp-root tbody tr:hover td{background:var(--mlp-accent-soft)}
+.mlp-root td code{font-size:.88em}
+.mlp-callout{margin:0 0 18px;padding:14px 18px;border-radius:var(--mlp-radius);font-size:.9em;line-height:1.6;display:flex;gap:12px;align-items:flex-start;border:1px solid transparent;box-shadow:var(--mlp-shadow)}
+.mlp-callout-icon{font-size:1.15em;flex-shrink:0;margin-top:1px}.mlp-callout-body{flex:1;min-width:0;color:var(--mlp-text-secondary)}
+.mlp-callout-body p{margin-bottom:4px}.mlp-callout-body p:last-child{margin-bottom:0}.mlp-callout-body strong{color:var(--mlp-text)}
+.mlp-callout-info{background:var(--mlp-blue-bg);border-color:var(--mlp-blue-border)}.mlp-callout-info .mlp-callout-icon{color:var(--mlp-blue)}
+.mlp-callout-tip{background:var(--mlp-green-bg);border-color:var(--mlp-green-border)}.mlp-callout-tip .mlp-callout-icon{color:var(--mlp-green)}
+.mlp-callout-warn{background:var(--mlp-orange-bg);border-color:var(--mlp-orange-border)}.mlp-callout-warn .mlp-callout-icon{color:var(--mlp-orange)}
+.mlp-callout-danger{background:var(--mlp-red-bg);border-color:var(--mlp-red-border)}.mlp-callout-danger .mlp-callout-icon{color:var(--mlp-red)}
+.mlp-header{margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid var(--mlp-border)}.mlp-header h1{margin-bottom:8px}
+.mlp-header-desc{color:var(--mlp-text-tertiary);font-size:1.05em;margin-bottom:16px;max-width:640px}
+.mlp-header-meta{display:flex;flex-wrap:wrap;align-items:center;gap:12px;font-size:.85em;color:var(--mlp-text-tertiary)}
+.mlp-header-meta code{padding:3px 10px;font-size:.85em;background:var(--mlp-accent-soft);color:var(--mlp-accent);border:1px solid var(--mlp-accent-soft);border-radius:9999px;font-weight:600}
+.mlp-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:9999px;font-size:.78em;font-weight:500;border:1px solid var(--mlp-border);color:var(--mlp-text-secondary);background:var(--mlp-bg-soft)}
+.mlp-divider{border:none;border-top:2px solid var(--mlp-border);margin:44px 0 40px}
+.mlp-section-label{font-size:.7em;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mlp-accent);margin-bottom:8px}
+@media(max-width:820px){.mlp-layout{flex-direction:column}.mlp-toc{position:static;width:100%;max-height:none;padding:16px 16px 0;border-right:none;border-bottom:1px solid var(--mlp-border)}.mlp-toc-list{display:flex;flex-wrap:wrap;gap:2px}.mlp-toc-list a,.mlp-toc-sublist a{padding:4px 10px;font-size:12px}.mlp-toc-sublist{display:none}.mlp-content{padding:24px 16px 64px}}
+@media(max-width:540px){.mlp-content{padding:20px 14px 48px}.mlp-root h1{font-size:1.6em}.mlp-root h2{font-size:1.25em}}
+</style>
+
+<div class="mlp-root">
+<div class="mlp-layout">
+
+<nav class="mlp-toc">
+<div class="mlp-toc-title">On this page</div>
+<ul class="mlp-toc-list">
+<li><a href="#intro"><span class="mlp-section-label" style="display:block;margin-bottom:2px">Overview</span>产品介绍</a></li>
+<li><a href="#quick-start">快速开始</a></li>
+<li><a href="#api-key">创建 API Key</a></li>
+<li><a href="#billing">计费与额度</a></li>
+<li><a href="#async-images">异步生图任务</a></li>
+<li>
+<a href="#tools">工具接入指南</a>
+<ul class="mlp-toc-sublist">
+<li><a href="#tool-choose">怎么选工具</a></li>
+<li><a href="#tool-openai"><img class="mlp-toc-icon" src="https://openai.com/favicon.ico" alt="">OpenAI Compatible</a></li>
+<li><a href="#tool-claude-code"><img class="mlp-toc-icon" src="https://claude.ai/favicon.ico" alt="">Claude Code</a></li>
+<li><a href="#tool-claude-cowork"><img class="mlp-toc-icon" src="https://claude.ai/favicon.ico" alt="">Claude Coworks</a></li>
+<li><a href="#tool-codex-cli"><img class="mlp-toc-icon" src="https://openai.com/favicon.ico" alt="">Codex CLI</a></li>
+<li><a href="#tool-opencode"><img class="mlp-toc-icon" src="https://opencode.ai/favicon.ico" alt="">OpenCode</a></li>
+<li><a href="#tool-cherry-studio"><img class="mlp-toc-icon" src="https://cherry-ai.com/favicon.ico" alt="">Cherry Studio</a></li>
+<li><a href="#tool-chatbox"><img class="mlp-toc-icon" src="https://chatboxai.app/favicon.ico" alt="">Chatbox</a></li>
+<li><a href="#tool-cline"><img class="mlp-toc-icon" src="https://cline.bot/favicon.ico" alt="">Cline</a></li>
+<li><a href="#tool-open-webui"><img class="mlp-toc-icon" src="https://openwebui.com/favicon.ico" alt="">Open WebUI</a></li>
+<li><a href="#tool-lobehub"><img class="mlp-toc-icon" src="https://lobehub.com/favicon.ico" alt="">LobeHub</a></li>
+<li><a href="#tool-nextchat"><img class="mlp-toc-icon" src="https://nextchat.club/favicon.ico" alt="">NextChat</a></li>
+<li><a href="#tool-cc-switch"><img class="mlp-toc-icon" src="https://ccswitch.io/favicon.ico" alt="">CC Switch</a></li>
+<li><a href="#tool-github-copilot"><img class="mlp-toc-icon" src="https://github.com/favicon.ico" alt="">GitHub Copilot</a></li>
+<li><a href="#tool-zed"><img class="mlp-toc-icon" src="https://zed.dev/favicon.ico" alt="">Zed Editor</a></li>
+<li><a href="#tool-workbuddy"><img class="mlp-toc-icon" src="https://copilot.tencent.com/favicon.ico" alt="">WorkBuddy</a></li>
+<li><a href="#tool-codebuddy"><img class="mlp-toc-icon" src="https://codebuddy.ai/favicon.ico" alt="">CodeBuddy</a></li>
+<li><a href="#tool-trae"><img class="mlp-toc-icon" src="https://trae.ai/favicon.ico" alt="">Trae</a></li>
+<li><a href="#tool-botgem"><img class="mlp-toc-icon" src="https://botgem.com/favicon.ico" alt="">BotGem</a></li>
+<li><a href="#tool-opencat"><img class="mlp-toc-icon" src="https://opencat.app/favicon.ico" alt="">OpenCat</a></li>
+<li><a href="#tool-langchain"><img class="mlp-toc-icon" src="https://langchain.com/favicon.ico" alt="">LangChain</a></li>
+<li><a href="#tool-llamaindex"><img class="mlp-toc-icon" src="https://ts.llamaindex.ai/favicon.ico" alt="">LlamaIndex</a></li>
+<li><a href="#tool-hermes">Hermes / OpenClaw</a></li>
+</ul>
+</li>
+<li><a href="#account">账户与订阅</a></li>
+<li><a href="#troubleshooting">常见问题排查</a></li>
+</ul>
+</nav>
+
+<main class="mlp-content">
+
+<div class="mlp-header">
+<div class="mlp-section-label">Documentation</div>
+<h1>KaPul API</h1>
+<p class="mlp-header-desc">AI 模型聚合与分发网关 — 兼容 OpenAI / Claude / Gemini 协议，在统一控制台管理模型、分组、额度和 API Key。</p>
+<div class="mlp-header-meta">
+<span class="mlp-badge">OpenAI 兼容</span>
+<span class="mlp-badge">多模型聚合</span>
+<code>api.kapul.cn:66/v1</code>
+</div>
+</div>
+
+<h2 id="intro">产品介绍</h2>
+<p>KaPul API 是一个 <strong>AI 模型聚合网关</strong>，把多个上游模型服务整理成统一 API。只需改 Base URL 和模型名，就能在任何兼容 OpenAI 的客户端中直接使用。</p>
+
+<h3>核心概念</h3>
+<ol>
+<li><strong>控制台</strong> — 注册、登录、充值、查看额度、创建 API Key。</li>
+<li><strong>API 地址</strong> — 客户端填写的 Base URL：<code>https://api.kapul.cn:66/v1</code>。</li>
+<li><strong>模型和分组</strong> — 模型决定能力与基础消耗，分组决定线路、稳定性、适用客户端和倍率。</li>
+</ol>
+
+<h3>适用人群</h3>
+<ul>
+<li>第一次用 API Key 接入 AI 工具的用户</li>
+<li>想把 KaPul API 配进 Cherry Studio、Claude Code、Codex CLI 或自写代码</li>
+<li>想搞懂模型倍率、分组倍率、固定消耗和额度消耗关系</li>
+</ul>
+
+<h3>阅读顺序</h3>
+<ol>
+<li><a href="#quick-start">快速开始</a> — 5 分钟跑通第一次调用</li>
+<li><a href="#api-key">创建 API Key</a> — 学会分组和额度管理</li>
+<li><a href="#billing">计费与额度</a> — 理解消费逻辑</li>
+<li><a href="#tools">工具接入</a> — 按客户端配置</li>
+</ol>
+
+<hr class="mlp-divider">
+
+<h2 id="quick-start">快速开始</h2>
+<p>5 分钟内完成注册、创建 Key 并发起第一次 API 请求。</p>
+
+<h3>1. 注册并登录</h3>
+<p>打开 KaPul API 控制台，按页面提示注册或登录。登录后确认账户余额或额度状态。</p>
+
+<h3>2. 配置 API 地址</h3>
+<p>大多数 OpenAI 兼容客户端把这个值称为 <code>Base URL</code>：</p>
+<p><strong>推荐地址：</strong><code>https://api.kapul.cn:66/v1</code></p>
+
+<h3>3. 创建 API Key</h3>
+<p>进入控制台令牌页面创建新 Key。名称写清用途，分组选 <code>auto</code>。详见 <a href="#api-key">创建 API Key</a>。</p>
+
+<h3>4. 选择模型</h3>
+<ul>
+<li>日常 / 文本：<code>gpt</code>、<code>claude</code>、<code>deepseek</code></li>
+<li>代码协作：<code>codex</code>、<code>claude-sonnet</code></li>
+<li>图片生成：<code>image</code>（按次计费）</li>
+</ul>
+
+<h3>5. 第一次请求</h3>
+<pre><code>curl https://api.kapul.cn:66/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-5.4-mini","messages":[{"role":"user","content":"Hello"}]}'</code></pre>
+
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>配置项</th><th>填写值</th></tr></thead>
+<tbody>
+<tr><td>API Key</td><td>控制台创建的 Key</td></tr>
+<tr><td>Base URL</td><td><code>https://api.kapul.cn:66/v1</code></td></tr>
+<tr><td>Model</td><td>控制台支持的模型名</td></tr>
+</tbody>
+</table></div>
+
+<h3>常见失败原因</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>错误</th><th>原因</th></tr></thead>
+<tbody>
+<tr><td><strong>401</strong></td><td>Key 填错、多余空格或已禁用</td></tr>
+<tr><td>模型不可用</td><td>模型名拼错或分组不支持</td></tr>
+<tr><td>额度不足</td><td>余额或套餐耗尽</td></tr>
+<tr><td>格式不兼容</td><td>Claude 原生格式发到 OpenAI 路径</td></tr>
+</tbody>
+</table></div>
+
+<hr class="mlp-divider">
+
+<h2 id="api-key">创建 API Key</h2>
+<p>API Key 是你调用 KaPul API 的凭证。<strong>任何拿到 Key 的人都能消耗你的额度</strong>，应像密码一样保管。</p>
+
+<h3>创建步骤</h3>
+<ol>
+<li>打开控制台令牌页面</li>
+<li>创建令牌，填写用途名称（<code>claude-code</code>、<code>cherry-studio</code> 等）</li>
+<li>分组选 <code>auto</code></li>
+<li>按需设置额度限制或过期时间</li>
+<li><strong>立即复制</strong> Key 到密码管理器</li>
+</ol>
+
+<div class="mlp-callout mlp-callout-warn">
+<span class="mlp-callout-icon">⚠</span>
+<div class="mlp-callout-body">
+<p><strong>安全警告</strong> — 不要把 API Key 写进公开仓库、截图或聊天。提交前检查 <code>.env</code> 和终端历史。</p>
+</div>
+</div>
+
+<h3>分组说明</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>分组</th><th>适用场景</th></tr></thead>
+<tbody>
+<tr><td><code>auto</code></td><td>推荐，失败时自动切换</td></tr>
+<tr><td><code>Codex-Basic / Value / Official</code></td><td>Codex 场景</td></tr>
+<tr><td><code>CC-MAX / CC-KIRO</code></td><td>Claude Code / Anthropic</td></tr>
+<tr><td><code>生图视频专用分组</code></td><td>图像 / 视频任务</td></tr>
+</tbody>
+</table></div>
+
+<h3>Key 管理建议</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>场景</th><th>建议</th></tr></thead>
+<tbody>
+<tr><td>日常客户端</td><td>长期 Key + 额度上限</td></tr>
+<tr><td>测试脚本</td><td>低额度 Key，用完禁用</td></tr>
+<tr><td>多个客户端</td><td>每个客户端单独 Key</td></tr>
+<tr><td>高风险实验</td><td>独立 Key + 独立额度上限</td></tr>
+</tbody>
+</table></div>
+
+<h3>在代码中使用</h3>
+<pre><code>KAPUL_API_KEY=sk-your-key
+KAPUL_BASE_URL=https://api.kapul.cn:66/v1</code></pre>
+<pre><code>const res = await fetch(`${process.env.KAPUL_BASE_URL}/chat/completions`, {
+  method:"POST",
+  headers:{Authorization:`Bearer ${process.env.KAPUL_API_KEY}`,"Content-Type":"application/json"},
+  body:JSON.stringify({model:"gpt-5.4-mini",messages:[{role:"user",content:"Hello"}]}),
+});
+console.log(await res.json());</code></pre>
+
+<h3>何时重新生成</h3>
+<ul>
+<li>怀疑 Key 泄露</li>
+<li>Key 被写入公开仓库</li>
+<li>某客户端异常消耗额度</li>
+<li>迁移到新分组</li>
+<li>按用途拆分额度</li>
+</ul>
+
+<hr class="mlp-divider">
+
+<h2 id="billing">计费与额度</h2>
+<p>费用包含三个维度：账户额度 → 模型消耗 → 分组影响。</p>
+
+<h3>额度说明</h3>
+<p>控制台用 <code>quota</code> 展示可用额度。调用模型消耗额度，充值或套餐增加额度。不同模型、分组、上下文长度均影响扣减速度。</p>
+
+<h3>消耗公式</h3>
+<pre><code>最终消耗 ≈ token 数量 × 模型倍率 × 分组倍率 × 输出/缓存修正系数</code></pre>
+<ul>
+<li><strong>输入 token</strong> — 消息、提示词、上下文</li>
+<li><strong>输出 token</strong> — 模型回复，通常更贵</li>
+<li><strong>模型倍率</strong> — 不同模型的基准消耗差异</li>
+<li><strong>分组倍率</strong> — 线路、渠道造成的差异</li>
+<li><strong>缓存倍率</strong> — Claude 等长上下文场景的额外规则</li>
+</ul>
+
+<h3>固定消耗模型</h3>
+<p>图片 / 视频 / 任务型模型按 <strong>次 / 秒数 / 任务</strong> 计费：<code>0.06 / request</code></p>
+
+<div class="mlp-callout mlp-callout-tip">
+<span class="mlp-callout-icon">✓</span>
+<div class="mlp-callout-body">
+<p><strong>建议</strong> — 新手用 <code>auto</code> 分组。明确需要特定客户端时再绑定具体分组。</p>
+</div>
+</div>
+
+<h3>成本控制</h3>
+<ol>
+<li>低倍率模型先测试</li>
+<li>测试 Key 设额度上限</li>
+<li>批量任务先小样本</li>
+<li>清理不必要上下文</li>
+<li>图片 / 视频先确认固定消耗</li>
+<li>多客户端分开 Key</li>
+</ol>
+
+<h3>异常排查</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>现象</th><th>可能原因</th></tr></thead>
+<tbody>
+<tr><td>消耗比预期高</td><td>高倍率模型或分组</td></tr>
+<tr><td>一次请求扣很多</td><td>上下文太长</td></tr>
+<tr><td>图片扣费明显</td><td>按次 + 规格影响</td></tr>
+<tr><td>未使用却有消耗</td><td>后台重试 / 自动同步</td></tr>
+<tr><td>失败也有记录</td><td>网关重试，查看日志</td></tr>
+</tbody>
+</table></div>
+
+<hr class="mlp-divider">
+
+<h2 id="async-images">异步生图任务</h2>
+<p>通过 API 提交图片生成任务，用任务 ID 查询进度并获取结果。所有请求需携带 <code>Authorization: Bearer YOUR_API_KEY</code>。</p>
+
+<h3>接口总览</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>接口</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td><code>POST /images/tasks</code></td><td>提交异步图片生成或编辑任务</td></tr>
+<tr><td><code>GET /images/tasks/{task_id}</code></td><td>查询任务状态与结果</td></tr>
+<tr><td><code>GET /images/tasks/{task_id}/content/{index}</code></td><td>获取受保护的图片正文</td></tr>
+</tbody>
+</table></div>
+
+<h3>提交生成任务</h3>
+<pre><code>curl -X POST "https://api.kapul.cn:66/v1/images/tasks" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-image-2-enterprise","prompt":"一只坐在月球上的橘猫","size":"1024x1024","n":1,"response_format":"b64_json"}'</code></pre>
+<p>返回 <code>202 Accepted</code>：<code>{"task_id":"task_xxx","status":"queued"}</code></p>
+
+<h3>图片模型尺寸</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>模型</th><th>默认</th><th>支持</th></tr></thead>
+<tbody>
+<tr><td><code>gpt-image-1-enterprise</code></td><td>1024×1024</td><td>1024×1024 / 1536</td></tr>
+<tr><td><code>gpt-image-2-enterprise</code></td><td>1024×1024</td><td>至 3840×2160（16 倍数，宽高比 1:3 ~ 3:1）</td></tr>
+<tr><td><code>gpt-image-2-4K</code></td><td>1024×1024</td><td>合法 WIDTH×HEIGHT</td></tr>
+<tr><td><code>grok-imagine-image</code></td><td>1k / 1:1</td><td>通过 <code>extra_fields</code> 表达尺寸</td></tr>
+</tbody>
+</table></div>
+
+<h3>图片编辑</h3>
+<pre><code>curl -X POST "https://api.kapul.cn:66/v1/images/tasks?action=edits" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "model=gpt-image-2-enterprise" -F "prompt=把背景换成夜晚东京" \
+  -F "image=@input.png"</code></pre>
+<p>多图编辑：重复 <code>-F "image=@..."</code>。gpt-image-1 最多 4 张，1.5 / 2 最多 10 张。</p>
+
+<h3>任务状态与下载</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>状态</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td><code>queued</code></td><td>任务已接收</td></tr>
+<tr><td><code>processing</code></td><td>处理中</td></tr>
+<tr><td><code>succeeded</code></td><td>至少交付一张图片</td></tr>
+<tr><td><code>failed</code></td><td>任务执行失败</td></tr>
+</tbody>
+</table></div>
+<pre><code># 查询状态
+curl "https://api.kapul.cn:66/v1/images/tasks/task_xxx" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+
+# 下载图片
+curl "https://api.kapul.cn:66/v1/images/tasks/task_xxx/content/0" \
+  -H "Authorization: Bearer YOUR_API_KEY" -o result.png</code></pre>
+
+<div class="mlp-callout mlp-callout-warn">
+<span class="mlp-callout-icon">⚠</span>
+<div class="mlp-callout-body">
+<p>浏览器 <code>&lt;img src&gt;</code> 不能附加 Authorization 头。前端请用 <code>fetch</code> 获取 Blob 后再用 Blob URL。</p>
+</div>
+</div>
+
+<h3>JavaScript 轮询</h3>
+<pre><code>const BASE="https://api.kapul.cn:66/v1",KEY=process.env.KAPUL_API_KEY;
+async function create(){return(await fetch(`${BASE}/images/tasks`,{method:"POST",headers:{Authorization:`Bearer ${KEY}`,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-image-2-enterprise",prompt:"未来城市",size:"1024x1024",n:1,response_format:"b64_json"})})).json()}
+async function wait(id){while(1){const t=await(await fetch(`${BASE}/images/tasks/${encodeURIComponent(id)}`,{headers:{Authorization:`Bearer ${KEY}`}})).json();if(t.status==="succeeded")return t.result;if(t.status==="failed")throw Error(t.error);await new Promise(r=>setTimeout(r,2500))}}
+const s=await create();console.log(await wait(s.task_id));</code></pre>
+
+<h3>Imagen 兼容</h3>
+<pre><code>curl -X POST "https://api.kapul.cn:66/v1/images/tasks" \
+  -H "Authorization: Bearer YOUR_API_KEY" -H "Content-Type: application/json" \
+  -d '{"model":"imagen-4.0-generate-001","prompt":"赛博朋克重庆","n":1,"size":"16:9","quality":"2K","response_format":"b64_json"}'</code></pre>
+
+<h3>错误码</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>HTTP</th><th>含义</th></tr></thead>
+<tbody>
+<tr><td><code>200</code></td><td>成功</td></tr>
+<tr><td><code>202</code></td><td>任务已接收</td></tr>
+<tr><td><code>400</code></td><td>参数不合法</td></tr>
+<tr><td><code>401</code></td><td>Key 无效</td></tr>
+<tr><td><code>404</code></td><td>任务不存在或不属于当前账号</td></tr>
+<tr><td><code>410</code></td><td>图片已过期</td></tr>
+</tbody>
+</table></div>
+<p>图片正文保留 <strong>1 小时</strong>。暂不提供取消、Webhook 及公开列表接口。</p>
+
+<hr class="mlp-divider">
+
+<h2 id="tools">工具接入指南</h2>
+<p>把 KaPul API 接入常见客户端。先根据目标选一个工具，跑通后再扩展到其他软件。</p>
+
+<h3>通用配置</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>配置项</th><th>推荐值</th></tr></thead>
+<tbody>
+<tr><td>Base URL</td><td><code>https://api.kapul.cn:66/v1</code></td></tr>
+<tr><td>API Key</td><td>控制台令牌页创建</td></tr>
+<tr><td>模型名</td><td>目标软件支持的模型</td></tr>
+</tbody>
+</table></div>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-choose">怎么选工具</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>你想做什么</th><th>建议先看</th><th>理由</th></tr></thead>
+<tbody>
+<tr><td>日常聊天 / 翻译 / 总结</td><td>Chatbox 或 Cherry Studio</td><td>界面直观，适合首次配置</td></tr>
+<tr><td>写代码 / 改项目</td><td>Claude Code、Codex CLI、OpenCode</td><td>适合项目目录</td></tr>
+<tr><td>VS Code 里用 AI</td><td>Cline</td><td>无需切换编辑器</td></tr>
+<tr><td>管理多个模型和 Provider</td><td>Cherry Studio 或 LobeHub</td><td>多 Provider 支持</td></tr>
+<tr><td>验证 Key 是否可用</td><td>OpenAI Compatible</td><td>最通用</td></tr>
+<tr><td>频繁断线需要排查</td><td>常见问题排查</td><td>先排网络和代理</td></tr>
+</tbody>
+</table></div>
+
+<h4>新手推荐顺序</h4>
+<ol>
+<li><a href="#api-key">创建 API Key</a></li>
+<li>理解 Base URL、API Key、Model 三个字段</li>
+<li>聊天 → Chatbox 或 Cherry Studio</li>
+<li>写代码 → Claude Code 或 Codex CLI</li>
+<li>跑通后再配置第二个软件</li>
+</ol>
+
+<h4>三个最容易出错的地方</h4>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>字段</th><th>正确</th><th>错误</th></tr></thead>
+<tbody>
+<tr><td>API Key</td><td>控制台创建的密钥</td><td>多复制空格、填到模型名</td></tr>
+<tr><td>Base URL</td><td>软件要连接的地址</td><td>有的要 <code>/v1</code>，有的不要</td></tr>
+<tr><td>Model</td><td>完整模型 ID</td><td>简写或过期模型名</td></tr>
+</tbody>
+</table></div>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-openai"><img class="mlp-tool-icon" src="https://openai.com/favicon.ico" alt=""> OpenAI Compatible</h3>
+<p>最通用的接入方式。在已安装的软件中找到 <code>Custom OpenAI</code> 或「自定义 API」入口即可。</p>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>字段</th><th>值</th></tr></thead>
+<tbody>
+<tr><td>API Key</td><td>控制台 Key</td></tr>
+<tr><td>Base URL</td><td><code>https://api.kapul.cn:66/v1</code>（必须含 <code>/v1</code>）</td></tr>
+<tr><td>模型名</td><td>控制台完整名称</td></tr>
+</tbody>
+</table></div>
+<h4>接口类型</h4>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>接口</th><th>路径</th><th>场景</th></tr></thead>
+<tbody>
+<tr><td>Chat Completions</td><td><code>/v1/chat/completions</code></td><td>聊天、代码助手</td></tr>
+<tr><td>Responses</td><td><code>/v1/responses</code></td><td>新版 API 工具</td></tr>
+<tr><td>Models</td><td><code>/v1/models</code></td><td>刷新模型列表</td></tr>
+</tbody>
+</table></div>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-claude-code"><img class="mlp-tool-icon" src="https://claude.ai/favicon.ico" alt=""> Claude Code</h3>
+<p>Anthropic 终端编程工具。 <strong>下载：</strong><a href="https://docs.anthropic.com/en/docs/claude-code/setup" target="_blank" rel="noopener noreferrer">官方文档</a> · <a href="https://github.com/anthropics/claude-code" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+<pre><code>npm install -g @anthropic-ai/claude-code
+claude --version && claude auth status
+claude auth login   # 如未登录
+claude doctor       # 健康检查</code></pre>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-claude-cowork"><img class="mlp-tool-icon" src="https://claude.ai/favicon.ico" alt=""> Claude Coworks</h3>
+<p>Claude Desktop 第三方推理配置。 <strong>下载：</strong><a href="https://claude.com/download" target="_blank" rel="noopener noreferrer">claude.com/download</a></p>
+<ol>
+<li>左上角菜单 → Developer → Configure Third-Party Inference</li>
+<li>Connection: <strong>Gateway</strong>，Credential: <strong>Static API key</strong></li>
+<li>Gateway Base URL: <code>https://api.kapul.cn:66/v1</code></li>
+<li>API key: 粘贴 Key，Auth scheme: <strong>x-api-key</strong></li>
+<li>先 Test connection，成功后 Apply Changes</li>
+</ol>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-codex-cli"><img class="mlp-tool-icon" src="https://openai.com/favicon.ico" alt=""> Codex CLI</h3>
+<p><strong>下载：</strong><a href="https://github.com/openai/codex" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+<pre><code>npm install -g @openai/codex && codex --version</code></pre>
+<p>配置文件 <code>~/.codex/config.toml</code>：</p>
+<pre><code>model_provider = "kapul"
+model = "&lt;模型ID&gt;"
+
+[model_providers.kapul]
+name = "KaPul API"
+base_url = "https://api.kapul.cn:66/v1"
+env_key = "KAPUL_API_KEY"
+wire_api = "responses"</code></pre>
+<p>PowerShell 设置环境变量：</p>
+<pre><code>[Environment]::SetEnvironmentVariable("KAPUL_API_KEY","你的Key","User")</code></pre>
+<div class="mlp-callout mlp-callout-warn">
+<span class="mlp-callout-icon">⚠</span>
+<div class="mlp-callout-body"><p>不要把 Key 写进 <code>config.toml</code>。频繁 Reconnect 时检查代理：<code>$env:HTTP_PROXY="http://127.0.0.1:端口"</code></p></div>
+</div>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-opencode"><img class="mlp-tool-icon" src="https://opencode.ai/favicon.ico" alt=""> OpenCode</h3>
+<p><strong>下载：</strong><a href="https://opencode.ai" target="_blank" rel="noopener noreferrer">opencode.ai</a> · <a href="https://github.com/sst/opencode" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+<ol>
+<li>设置 → 提供商 → 自定义提供商 → + 连接</li>
+<li>提供商 ID: <code>kapul</code>，显示名称: KaPul API</li>
+<li>基础 URL: <code>https://api.kapul.cn:66/v1</code>，API 密钥: 粘贴 Key</li>
+<li>添加模型（完整 ID），请求头留空，提交</li>
+</ol>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-cherry-studio"><img class="mlp-tool-icon" src="https://cherry-ai.com/favicon.ico" alt=""> Cherry Studio</h3>
+<p><strong>下载：</strong><a href="https://www.cherryai.com.cn/download" target="_blank" rel="noopener noreferrer">cherryai.com.cn</a> · <a href="https://github.com/CherryHQ/cherry-studio/releases" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+<p>左下齿轮 → 模型服务 → + 添加服务商：</p>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>字段</th><th>值</th></tr></thead>
+<tbody>
+<tr><td>提供商名称</td><td>KaPul API</td></tr>
+<tr><td>API 密钥</td><td>粘贴 Key</td></tr>
+<tr><td>OpenAI Base URL</td><td><code>https://api.kapul.cn:66</code>（根地址，<strong>不加 /v1</strong>）</td></tr>
+<tr><td>Anthropic Base URL</td><td>留空</td></tr>
+</tbody>
+</table></div>
+<p>右侧 + 添加模型：模型 ID 填完整名称，端点类型必须选 <strong>OpenAI</strong>。</p>
+<div class="mlp-callout mlp-callout-warn">
+<span class="mlp-callout-icon">⚠</span>
+<div class="mlp-callout-body"><p>端点类型默认可能是 Anthropic，须手动切 OpenAI。填 API 根地址（不带 <code>/v1</code>），软件自动拼接。</p></div>
+</div>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-chatbox"><img class="mlp-tool-icon" src="https://chatboxai.app/favicon.ico" alt=""> Chatbox</h3>
+<p><strong>下载：</strong><a href="https://chatboxai.app/en" target="_blank" rel="noopener noreferrer">chatboxai.app</a></p>
+<ol>
+<li>设置 → 模型提供方 → OpenAI</li>
+<li>API 密钥: 粘贴 Key</li>
+<li>API 主机: <code>https://api.kapul.cn:66</code>（<strong>不加 /v1</strong>，软件自动补）</li>
+<li>预览显示 <code>/v1/chat/completions</code> 即正确</li>
+<li>新建模型：模型 ID 填完整名，模型类型选「聊天」</li>
+</ol>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-cline"><img class="mlp-tool-icon" src="https://cline.bot/favicon.ico" alt=""> Cline</h3>
+<p>VS Code AI 编程助手。 <strong>下载：</strong><a href="https://cline.bot" target="_blank" rel="noopener noreferrer">cline.bot</a> · <a href="https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev" target="_blank" rel="noopener noreferrer">VS Code 扩展</a></p>
+<ol>
+<li>左侧 Cline 图标 → 齿轮 → API Configuration</li>
+<li>API Provider: <strong>OpenAI Compatible</strong></li>
+<li>Base URL: <code>https://api.kapul.cn:66/v1</code></li>
+<li>API Key: 粘贴，Model ID: 完整模型 ID</li>
+</ol>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-open-webui"><img class="mlp-tool-icon" src="https://openwebui.com/favicon.ico" alt=""> Open WebUI</h3>
+<p><strong>下载：</strong><a href="https://docs.openwebui.com/getting-started/" target="_blank" rel="noopener noreferrer">安装文档</a> · <a href="https://github.com/open-webui/open-webui" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+<pre><code>OPENAI_API_BASE_URL=https://api.kapul.cn:66/v1
+OPENAI_API_KEY=YOUR_API_KEY</code></pre>
+<p>管理面板：Connections → 新增 OpenAI 兼容连接 → 填写 Base URL + Key。多人使用时建议单独创建 Key 并设置额度上限。</p>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-lobehub"><img class="mlp-tool-icon" src="https://lobehub.com/favicon.ico" alt=""> LobeHub / LobeChat</h3>
+<p><strong>下载：</strong><a href="https://lobehub.com" target="_blank" rel="noopener noreferrer">lobehub.com</a> · <a href="https://github.com/lobehub/lobe-chat" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+<ol>
+<li>设置 → 智能体 → AI 服务商 → OpenAI</li>
+<li>API Key: 粘贴，API 代理地址: <code>https://api.kapul.cn:66/v1</code></li>
+<li>连通性检查：填可用模型 ID</li>
+<li>获取模型列表 → 开启需要的模型</li>
+<li>服务模型页面设置默认模型</li>
+</ol>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-nextchat"><img class="mlp-tool-icon" src="https://nextchat.club/favicon.ico" alt=""> NextChat</h3>
+<p><strong>下载：</strong><a href="https://app.nextchat.dev" target="_blank" rel="noopener noreferrer">网页版</a> · <a href="https://nextchat.club" target="_blank" rel="noopener noreferrer">官网</a> · <a href="https://github.com/ChatGPTNextWeb/NextChat" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+<ol>
+<li>打开网页版进入设置</li>
+<li>API Key: 粘贴，Base URL: <code>https://api.kapul.cn:66/v1</code></li>
+<li>模型：填完整 ID，保存后新建聊天测试</li>
+</ol>
+
+<hr class="mlp-divider">
+
+<h3 id="tool-cc-switch"><img class="mlp-tool-icon" src="https://ccswitch.io/favicon.ico" alt=""> CC Switch</h3>
+<p><strong>下载：</strong><a href="https://ccswitch.io/en/" target="_blank" rel="noopener noreferrer">ccswitch.io</a></p>
+<p>配置切换工具。在设置中找 OpenAI 兼容入口，填写 Base URL <code>https://api.kapul.cn:66/v1</code> + API Key + 模型 ID。</p>
+
+<h3 id="tool-github-copilot"><img class="mlp-tool-icon" src="https://github.com/favicon.ico" alt=""> GitHub Copilot</h3>
+<p><strong>下载：</strong><a href="https://docs.github.com/copilot/get-started/quickstart" target="_blank" rel="noopener noreferrer">官方文档</a></p>
+<div class="mlp-callout mlp-callout-warn">
+<span class="mlp-callout-icon">⚠</span>
+<div class="mlp-callout-body"><p>不能直接填写 KaPul Key，需通过代理工具或中间层转发的方式接入。</p></div>
+</div>
+
+<h3 id="tool-zed"><img class="mlp-tool-icon" src="https://zed.dev/favicon.ico" alt=""> Zed Editor</h3>
+<p><strong>下载：</strong><a href="https://zed.dev/download" target="_blank" rel="noopener noreferrer">zed.dev</a></p>
+<p>设置 → AI / Provider → OpenAI Compatible → Base URL <code>https://api.kapul.cn:66/v1</code> + API Key。</p>
+
+<h3 id="tool-workbuddy"><img class="mlp-tool-icon" src="https://copilot.tencent.com/favicon.ico" alt=""> WorkBuddy</h3>
+<p><strong>下载：</strong><a href="https://copilot.tencent.com/work/" target="_blank" rel="noopener noreferrer">官方入口</a></p>
+<p>企业版可能限制自定义 Provider。支持时填写 Base URL + API Key。</p>
+
+<h3 id="tool-codebuddy"><img class="mlp-tool-icon" src="https://codebuddy.ai/favicon.ico" alt=""> CodeBuddy</h3>
+<p><strong>下载：</strong><a href="https://www.codebuddy.ai/ide" target="_blank" rel="noopener noreferrer">codebuddy.ai/ide</a></p>
+<p>设置 → 模型提供商 → OpenAI Compatible → Base URL + API Key。</p>
+
+<h3 id="tool-trae"><img class="mlp-tool-icon" src="https://trae.ai/favicon.ico" alt=""> Trae</h3>
+<p><strong>下载：</strong><a href="https://www.trae.ai/download" target="_blank" rel="noopener noreferrer">trae.ai/download</a></p>
+<p>设置 → 自定义 API / Provider → Base URL <code>https://api.kapul.cn:66/v1</code> + API Key。</p>
+
+<h3 id="tool-botgem"><img class="mlp-tool-icon" src="https://botgem.com/favicon.ico" alt=""> BotGem</h3>
+<p><strong>下载：</strong><a href="https://botgem.com" target="_blank" rel="noopener noreferrer">botgem.com</a></p>
+<p>支持自定义 API 时填写 Base URL + API Key。</p>
+
+<h3 id="tool-opencat"><img class="mlp-tool-icon" src="https://opencat.app/favicon.ico" alt=""> OpenCat</h3>
+<p><strong>下载：</strong><a href="https://opencat.app" target="_blank" rel="noopener noreferrer">opencat.app</a></p>
+<p>设置 → API 配置 → OpenAI Compatible → Base URL + API Key。</p>
+
+<h3 id="tool-langchain"><img class="mlp-tool-icon" src="https://langchain.com/favicon.ico" alt=""> LangChain / SDK</h3>
+<pre><code>from langchain_openai import ChatOpenAI
+llm = ChatOpenAI(
+    base_url="https://api.kapul.cn:66/v1",
+    api_key="你的Key",
+    model="模型ID"
+)</code></pre>
+
+<h3 id="tool-llamaindex"><img class="mlp-tool-icon" src="https://ts.llamaindex.ai/favicon.ico" alt=""> LlamaIndex</h3>
+<p><strong>下载：</strong><a href="https://developers.llamaindex.ai" target="_blank" rel="noopener noreferrer">官方文档</a> · <a href="https://github.com/run-llama/llama_index" target="_blank" rel="noopener noreferrer">GitHub</a></p>
+<p>开发框架，参考文档配置自定义 LLM endpoint。</p>
+
+<h3 id="tool-hermes">Hermes / OpenClaw 403</h3>
+<p>遇到 403 时检查代理设置和分组配置，确认 Key 分组支持该模型。</p>
+
+<hr class="mlp-divider">
+
+<h2 id="account">账户与订阅</h2>
+<p>管理余额、充值、套餐和订单。</p>
+
+<h3>账户信息</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>项目</th><th>用途</th></tr></thead>
+<tbody>
+<tr><td>余额 / 额度</td><td>判断还能调用多少模型</td></tr>
+<tr><td>当前套餐</td><td>周期额度或特殊分组权限</td></tr>
+<tr><td>API Key 用量</td><td>排查哪个工具消耗额度</td></tr>
+<tr><td>订单记录</td><td>查询充值、套餐购买状态</td></tr>
+</tbody>
+</table></div>
+
+<h3>新手建议</h3>
+<ol>
+<li>先充值或开通适合自己的套餐</li>
+<li>为每个工具创建单独 API Key</li>
+<li>给测试 Key 设置额度上限</li>
+<li>定期查看日志和余额变化</li>
+</ol>
+
+<hr class="mlp-divider">
+
+<h2 id="troubleshooting">常见问题排查</h2>
+
+<h3>快速检查清单</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>检查项</th><th>正确状态</th></tr></thead>
+<tbody>
+<tr><td>Base URL</td><td>包含 <code>/v1</code></td></tr>
+<tr><td>API Key</td><td>控制台创建的完整 Key</td></tr>
+<tr><td>鉴权头</td><td><code>Authorization: Bearer YOUR_KEY</code></td></tr>
+<tr><td>模型名</td><td>与控制台完整 ID 完全一致</td></tr>
+<tr><td>分组</td><td>当前 Key 的分组支持该模型</td></tr>
+<tr><td>接口格式</td><td>不混用 OpenAI / Anthropic / Responses</td></tr>
+</tbody>
+</table></div>
+
+<h3>HTTP 状态码</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>状态码</th><th>常见原因</th></tr></thead>
+<tbody>
+<tr><td><strong>400</strong></td><td>请求体格式错误</td></tr>
+<tr><td><strong>401</strong></td><td>Key 错误 / 过期 / 禁用</td></tr>
+<tr><td><strong>403</strong></td><td>分组、模型、代理或权限限制</td></tr>
+<tr><td><strong>404</strong></td><td>路径错误，常见漏了 <code>/v1</code></td></tr>
+<tr><td><strong>429</strong></td><td>频率 / 并发过高</td></tr>
+<tr><td><strong>500</strong></td><td>上游异常或网关临时错误</td></tr>
+</tbody>
+</table></div>
+
+<h3>最小定位方法</h3>
+<ol>
+<li>用 <code>curl</code> 测试同一个 Key 和模型</li>
+<li>curl 可用再检查客户端配置</li>
+<li>换低倍率常用模型测试</li>
+<li>换备用地址测试</li>
+<li>到控制台日志看失败原因和实际扣费</li>
+</ol>
+
+<h3>常见错误码</h3>
+<div class="mlp-table-wrap"><table>
+<thead><tr><th>错误</th><th>原因</th><th>解决</th></tr></thead>
+<tbody>
+<tr><td><strong>401</strong></td><td>Key 错误 / 禁用</td><td>重新创建 Key</td></tr>
+<tr><td><strong>404</strong></td><td>模型名 / 分组</td><td>核对控制台</td></tr>
+<tr><td><strong>429</strong></td><td>速率限制</td><td>降频或升级套餐</td></tr>
+<tr><td>额度不足</td><td>余额耗尽</td><td>充值或等重置</td></tr>
+<tr><td>连接超时</td><td>网络不通</td><td>检查代理和网络</td></tr>
+</tbody>
+</table></div>
+
+<h3>Codex 频繁 Reconnect</h3>
+<p><code>~/.codex/.env</code> 中写入代理配置：</p>
+<pre><code>HTTP_PROXY="http://127.0.0.1:端口"
+HTTPS_PROXY="http://127.0.0.1:端口"</code></pre>
+
+</main>
+</div>
+</div>

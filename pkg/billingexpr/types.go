@@ -1,0 +1,117 @@
+package billingexpr
+
+import (
+	"crypto/sha256"
+	"fmt"
+
+	"github.com/QuantumNous/new-api/common"
+)
+
+type RequestInput struct {
+	Headers map[string]string
+	Body    []byte
+	Usage   map[string]any
+	// Params holds request-probe values frozen for the literal paths the
+	// expression reads with param(). It takes precedence over Body, so a
+	// snapshot can re-evaluate an expression later without persisting the whole
+	// request body (used by task billing, whose settlement runs after submit).
+	Params map[string]any
+}
+
+// TokenParams holds all token dimensions passed into an Expr evaluation.
+// Fields beyond P and C are optional — when absent they default to 0,
+// which means cache-unaware expressions keep working unchanged.
+type TokenParams struct {
+	P    float64 // prompt tokens (text) — auto-excludes sub-categories priced separately
+	C    float64 // completion tokens (text) — auto-excludes sub-categories priced separately
+	Len  float64 // total input context length for tier conditions (non-Claude: raw prompt_tokens; Claude: text + cache read + cache creation)
+	CR   float64 // cache read (hit) tokens
+	CC   float64 // cache creation tokens (5-min TTL for Claude, generic for others)
+	CC1h float64 // cache creation tokens — 1-hour TTL (Claude only)
+	Img  float64 // image input tokens
+	ImgO float64 // image output tokens
+	AI   float64 // audio input tokens
+	AO   float64 // audio output tokens
+}
+
+// RequestRuleTrace describes one request-dependent multiplier detected at compile time.
+type RequestRuleTrace struct {
+	Cond       string  `json:"cond"`
+	Multiplier float64 `json:"multiplier"`
+	Matched    bool    `json:"matched"`
+	// Dynamic marks a factor read from the request at run time (param/header/u)
+	// instead of a literal written in the expression. Multiplier then carries the
+	// value actually applied, clamped to MaxRequestMultiplier.
+	Dynamic bool `json:"dynamic,omitempty"`
+	// Clamped marks a dynamic factor that exceeded MaxRequestMultiplier and was
+	// saturated, so the consume log shows the anomaly.
+	Clamped bool `json:"clamped,omitempty"`
+}
+
+type BillingUnit string
+
+const (
+	BillingUnitToken   BillingUnit = "token"
+	BillingUnitRequest BillingUnit = "request"
+)
+
+// TraceResult holds side-channel info captured while an expression runs.
+type TraceResult struct {
+	BillingUnit  BillingUnit        `json:"billing_unit"`
+	FixedPrice   *float64           `json:"fixed_price,omitempty"`
+	MatchedTier  string             `json:"matched_tier"`
+	RequestRules []RequestRuleTrace `json:"request_rules,omitempty"`
+	Cost         float64            `json:"cost"`
+	// RequestMultiplierErr records a dynamic request factor that could not be
+	// converted into a bounded multiplier. The engine fails closed on it instead
+	// of charging a guessed amount.
+	RequestMultiplierErr string `json:"-"`
+}
+
+// BillingSnapshot captures billing state at pre-consume time. Expression and
+// request fields stay frozen; group-dependent fields are refreshed before an
+// auto-group retry and settlement. It is fully serializable and contains no
+// compiled program pointers.
+type BillingSnapshot struct {
+	BillingMode               string         `json:"billing_mode"`
+	ModelName                 string         `json:"model_name"`
+	ExprString                string         `json:"expr_string"`
+	ExprHash                  string         `json:"expr_hash"`
+	GroupRatio                float64        `json:"group_ratio"`
+	EstimatedPromptTokens     int            `json:"estimated_prompt_tokens"`
+	EstimatedCompletionTokens int            `json:"estimated_completion_tokens"`
+	EstimatedQuotaBeforeGroup float64        `json:"estimated_quota_before_group"`
+	EstimatedQuotaAfterGroup  int            `json:"estimated_quota_after_group"`
+	EstimatedTier             string         `json:"estimated_tier"`
+	EstimatedBillingUnit      BillingUnit    `json:"estimated_billing_unit,omitempty"`
+	EstimatedFixedPrice       *float64       `json:"estimated_fixed_price,omitempty"`
+	QuotaPerUnit              float64        `json:"quota_per_unit"`
+	ExprVersion               int            `json:"expr_version"`
+	TaskUsageBilling          bool           `json:"task_usage_billing,omitempty"`
+	UsageFacts                map[string]any `json:"usage_facts,omitempty"`
+	// ParamFacts freezes the request-probe values a param()-based expression
+	// reads, so task settlement re-evaluates it identically to submission.
+	ParamFacts map[string]any `json:"param_facts,omitempty"`
+}
+
+// TieredResult holds everything needed after running tiered settlement.
+type TieredResult struct {
+	BillingUnit            BillingUnit        `json:"billing_unit"`
+	FixedPrice             *float64           `json:"fixed_price,omitempty"`
+	ActualQuotaBeforeGroup float64            `json:"actual_quota_before_group"`
+	ActualQuotaAfterGroup  int                `json:"actual_quota_after_group"`
+	MatchedTier            string             `json:"matched_tier"`
+	RequestRules           []RequestRuleTrace `json:"request_rules,omitempty"`
+	CrossedTier            bool               `json:"crossed_tier"`
+	// Clamp records a single-request saturation event during quota conversion so the
+	// caller can surface it on the consume log for admin auditing. Nil when no
+	// clamping occurred. Not serialized: the marker is attached separately via
+	// the shared quota-saturation audit path.
+	Clamp *common.QuotaClamp `json:"-"`
+}
+
+// ExprHashString returns the SHA-256 hex digest of an expression string.
+func ExprHashString(expr string) string {
+	h := sha256.Sum256([]byte(expr))
+	return fmt.Sprintf("%x", h)
+}
