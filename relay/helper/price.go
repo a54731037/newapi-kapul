@@ -336,6 +336,13 @@ func modelPriceHelperTiered(c *gin.Context, info *relaycommon.RelayInfo, billing
 	if err != nil {
 		return hosttypes.PriceData{}, err
 	}
+	if info.RelayFormat == types.RelayFormatOpenAIImage {
+		// Image sizes are free-form ("1344x768", "1024×1024", "auto"), so the
+		// resolution tier an expression compares against is derived here from
+		// the long edge. Freezing it on the input keeps pre-consume and
+		// settlement on the same tier.
+		requestInput = ApplyImageResolutionToBillingInput(requestInput)
+	}
 
 	rawCost, trace, err := billingexpr.RunExprWithRequest(exprStr, billingexpr.TokenParams{
 		P:   float64(promptTokens),

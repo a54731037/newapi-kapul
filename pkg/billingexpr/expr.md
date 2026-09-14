@@ -164,6 +164,30 @@ only the last `else` branch:
 ) * param("n")
 ```
 
+#### Image resolutions are normalized by the host
+
+Declared image sizes are free-form (`1024x1024`, `1024×1024`, `1344x768`,
+`2048x2048`, `auto`), which one string comparison cannot classify. Before
+evaluation the host derives a tier and injects it as `param("resolution")`, so
+expressions compare a single canonical label:
+
+| Tier | Long edge | Typical sizes |
+|------|-----------|---------------|
+| `1k` | ≤ 1280 | `1024x1024`, `1280x720` |
+| `2k` | 1281–3072 | `1344x768`, `1536x1024`, `2048x2048`, `2560x1440` |
+| `4k` | ≥ 3073 | `2160x3840`, `3840x2160`, `4096x4096` |
+
+- An explicit `resolution` wins over `size`; `1k`/`2k`/`4k` (any case) plus
+  `1080p`/`1440p`/`2160p`/`hd`/`qhd`/`uhd` are accepted.
+- Separators `x`, `X`, `×`, `*` and whitespace are all accepted.
+- Unparseable input (`auto`, empty, a single dimension, unknown resolution)
+  resolves to the **highest** tier, so an undeclared size is never undercharged.
+- The derived value is frozen on the billing input, so pre-consume and
+  settlement always select the same tier.
+
+Only image relay formats get this treatment; task models keep using their
+plugin-declared `u("resolution")`/`u("seconds")` facts.
+
 Two factor shapes are accepted:
 
 - **Literal**: `<probe condition> ? <number> : 1`, where the condition references
