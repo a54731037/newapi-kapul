@@ -128,13 +128,17 @@ describe('visual time billing editor', () => {
         onRequestRuleExprChange={vi.fn()}
       />
     )
-    const tier = screen.getByRole('group', { name: 'Pricing tier short' })
+    // Token and per-call leaves in one tree are now editable in the flat editor.
+    const tierNames = screen
+      .getAllByPlaceholderText('Tier name')
+      .map((input) => (input as HTMLInputElement).value)
+    expect(tierNames).toEqual(['short', 'long'])
     expect(
-      within(tier).getByRole('textbox', { name: 'Price per request' })
+      screen.getByRole('textbox', { name: 'Price per request' })
     ).toHaveValue('0.01')
     expect(
-      within(tier).queryByRole('textbox', { name: 'Input price' })
-    ).not.toBeInTheDocument()
+      screen.getAllByRole('textbox', { name: 'Input price' })[0]
+    ).toHaveValue('2')
     expect(onBillingExprChange).not.toHaveBeenCalled()
   })
   test('edits request-probe resolution tiers through the visual condition tree', async () => {
@@ -189,9 +193,9 @@ describe('visual time billing editor', () => {
       />
     )
 
-    // A flat expression opens the tier editor, which has no request probes.
+    // A flat expression opens the tier editor, which has no request multiplier.
     expect(
-      screen.queryByRole('textbox', { name: 'Request field path' })
+      screen.queryByRole('combobox', { name: 'Request multiplier mode' })
     ).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'More templates...' }))
@@ -199,24 +203,28 @@ describe('visual time billing editor', () => {
       screen.getByRole('button', { name: 'Resolution tiers (per_call)' })
     )
 
+    // Comparing the normalised tier keeps the expression in the flat editor,
+    // where each tier and the image-count factor stay editable.
     expect(onBillingExprChange).toHaveBeenLastCalledWith(
-      expect.stringContaining('tier("1k", per_call(0.03))')
+      expect.stringContaining('tier("4k", per_call(0.10))')
     )
-    // The seeded document expression opens the visual condition tree, where the
-    // request field, its key and the text value are all editable — plus the
-    // image-count multiplier that scales every tier.
     expect(
-      screen.getAllByRole('textbox', { name: 'Request field path' })
-    ).toHaveLength(5)
+      screen
+        .getAllByPlaceholderText('Tier name')
+        .map((input) => (input as HTMLInputElement).value)
+    ).toEqual(['4k', '2k', '1k'])
+    expect(
+      screen
+        .getAllByRole('textbox', { name: 'Price per request' })
+        .map((input) => (input as HTMLInputElement).value)
+    ).toEqual(['0.1', '0.06', '0.03'])
+    expect(
+      screen.getByRole('combobox', { name: 'Request multiplier mode' })
+    ).toHaveTextContent('By value')
+    // The multiplier row is the first request-field input on the page.
     expect(
       screen.getAllByRole('textbox', { name: 'Request field path' })[0]
     ).toHaveValue('n')
-    expect(
-      screen.getAllByRole('combobox', { name: 'Condition input' })
-    ).toHaveLength(4)
-    expect(
-      screen.getAllByRole('combobox', { name: 'Condition value type' })[0]
-    ).toBeInTheDocument()
   })
   test('adds a request-field condition in the tier editor and keeps it in the expression', async () => {
     const onBillingExprChange = vi.fn()
@@ -278,6 +286,38 @@ describe('visual time billing editor', () => {
     expect(units[0]).toHaveValue(2)
     expect(units[13]).toHaveValue(15)
   })
+  test('seeds video resolution tiers priced per second from a preset', async () => {
+    const onBillingExprChange = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <TieredPricingEditor
+        billingExpr=''
+        requestRuleExpr=''
+        onBillingExprChange={onBillingExprChange}
+        onRequestRuleExprChange={vi.fn()}
+      />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'More templates...' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Video resolution × seconds (per_call)' })
+    )
+
+    // Resolution tiers plus a duration factor, both editable in the flat editor.
+    expect(
+      screen
+        .getAllByPlaceholderText('Tier name')
+        .map((input) => (input as HTMLInputElement).value)
+    ).toEqual(['1080p', '720p'])
+    expect(
+      screen
+        .getAllByRole('textbox', { name: 'Price per request' })
+        .map((input) => (input as HTMLInputElement).value)
+    ).toEqual(['0.6', '0.4'])
+    expect(
+      screen.getAllByRole('textbox', { name: 'Request field path' })[0]
+    ).toHaveValue('seconds')
+  })
   test('adds a whole-tree request multiplier from the tier editor', async () => {
     const onBillingExprChange = vi.fn()
     const user = userEvent.setup()
@@ -300,7 +340,7 @@ describe('visual time billing editor', () => {
       '(tier("per_second", fixed(0.05))) * param("seconds")'
     )
   })
-  test('edits the enumerated per-second table on the document editor', async () => {
+  test('edits the enumerated per-second table visually', async () => {
     const onBillingExprChange = vi.fn()
     const source =
       'tier("per_second", per_call(0.05)) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "4" ? 4 : 1)'
@@ -313,7 +353,7 @@ describe('visual time billing editor', () => {
       />
     )
     const user = userEvent.setup()
-    // The whole-tree factor chain opens the document editor with one row per unit.
+    // The whole-tree factor chain opens as a unit list with one row per unit.
     const units = screen.getAllByRole('spinbutton', { name: 'Unit value' })
     expect(units.map((input) => (input as HTMLInputElement).value)).toEqual([
       '2',
@@ -322,16 +362,16 @@ describe('visual time billing editor', () => {
     expect(onBillingExprChange).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Add unit' }))
     expect(onBillingExprChange).toHaveBeenLastCalledWith(
-      'tier("per_second", per_call(0.05)) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "4" ? 4 : 1) * (param("seconds") == "5" ? 5 : 1)'
+      '(tier("per_second", per_call(0.05))) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "4" ? 4 : 1) * (param("seconds") == "5" ? 5 : 1)'
     )
     await user.click(
       screen.getAllByRole('button', { name: 'Remove unit' })[0]
     )
     expect(onBillingExprChange).toHaveBeenLastCalledWith(
-      'tier("per_second", per_call(0.05)) * (param("seconds") == "4" ? 4 : 1) * (param("seconds") == "5" ? 5 : 1)'
+      '(tier("per_second", per_call(0.05))) * (param("seconds") == "4" ? 4 : 1) * (param("seconds") == "5" ? 5 : 1)'
     )
   })
-  test('shows and removes a multiplier on the document editor', async () => {
+  test('shows and removes a multiplier on the visual editor', async () => {
     const onBillingExprChange = vi.fn()
     const user = userEvent.setup()
     render(
@@ -351,7 +391,7 @@ describe('visual time billing editor', () => {
 
     await user.click(screen.getByRole('button', { name: 'Remove multiplier' }))
     expect(onBillingExprChange.mock.lastCall?.[0]).toBe(
-      '(param("size") == "1024x1024" ? tier("1k", per_call(0.03)) : tier("2k", per_call(0.05)))'
+      'param("size") == "1024x1024" ? tier("1k", per_call(0.03)) : tier("2k", per_call(0.05))'
     )
   })
   test('edits the enumerated per-second units visually', async () => {
@@ -382,14 +422,14 @@ describe('visual time billing editor', () => {
 
     await user.click(screen.getByRole('button', { name: 'Add unit' }))
     expect(onBillingExprChange.mock.lastCall?.[0]).toBe(
-      'tier("per_second", per_call(0.05)) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "3" ? 3 : 1) * (param("seconds") == "4" ? 4 : 1)'
+      '(tier("per_second", per_call(0.05))) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "3" ? 3 : 1) * (param("seconds") == "4" ? 4 : 1)'
     )
 
     await user.click(
       screen.getAllByRole('button', { name: 'Remove unit' })[2]
     )
     expect(onBillingExprChange.mock.lastCall?.[0]).toBe(
-      'tier("per_second", per_call(0.05)) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "3" ? 3 : 1)'
+      '(tier("per_second", per_call(0.05))) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "3" ? 3 : 1)'
     )
   })
   test('opens group actions by keyboard and returns focus when dismissed', async () => {

@@ -83,6 +83,7 @@ import {
   type TimeFunc,
 } from '@/features/pricing/lib/billing-expr'
 import { compileBillingExpression } from '@/features/pricing/lib/billing-expression/parser'
+import { visitExpression } from '@/features/pricing/lib/billing-expression/types'
 import {
   parseVisualBillingDocument,
   serializeVisualBillingDocument,
@@ -206,12 +207,26 @@ const PRESET_GROUPS: PresetGroup[] = [
       {
         key: 'resolution-tiers',
         label: 'Resolution tiers (per_call)',
-        expr: `(param("resolution") == "1k" || param("size") == "1024x1024"
-  ? tier("1k", per_call(0.03))
-  : (param("resolution") == "2k" || param("size") == "4096x4096"
-    ? tier("2k", per_call(0.03))
-    : tier("4k", per_call(0.05)))
+        // The host normalises every declared size to one of these tiers before
+        // evaluation, so comparing param("resolution") stays correct for
+        // "1024×1024", "1344x768" or "auto" alike. The factor wraps the whole
+        // tree in parentheses because `*` binds tighter than `?:`.
+        expr: `(param("resolution") == "4k"
+  ? tier("4k", per_call(0.10))
+  : (param("resolution") == "2k"
+    ? tier("2k", per_call(0.06))
+    : tier("1k", per_call(0.03)))
 ) * param("n")`,
+      },
+      {
+        key: 'video-resolution-seconds',
+        label: 'Video resolution × seconds (per_call)',
+        // Task models read their facts through u(); the factor chain multiplies
+        // the per-second price by the requested duration.
+        expr: `(u("resolution") == "1080p"
+  ? tier("1080p", per_call(0.6))
+  : tier("720p", per_call(0.4))
+) * u("seconds")`,
       },
       {
         key: 'per-second',
@@ -1241,6 +1256,7 @@ function CostEstimator({ effectiveExpr, fullExpr, currency }: EstimatorProps) {
   const billingTime = useBillingTime(effectiveExpr)
   const [promptTokens, setPromptTokens] = useState(0)
   const [completionTokens, setCompletionTokens] = useState(0)
+  const [probeValues, setProbeValues] = useState<Record<string, string>>({})
   const [extras, setExtras] = useState<ExtraTokenValues>({
     cacheReadTokens: 0,
     cacheCreateTokens: 0,
@@ -1256,6 +1272,35 @@ function CostEstimator({ effectiveExpr, fullExpr, currency }: EstimatorProps) {
     [effectiveExpr]
   )
 
+  // Literal param()/header() paths the expression reads, so the estimator can
+  // offer one input per request field instead of failing with "request body".
+  const probePaths = useMemo(() => {
+    const compiled = compileBillingExpression(effectiveExpr)
+    if (compiled.status !== 'ready') return []
+    const paths = new Set<string>()
+    visitExpression(compiled.ast, (node) => {
+      if (node.kind !== 'call') return
+      if (node.name !== 'param') return
+      const argument = node.args[0]
+      if (argument?.kind === 'literal' && typeof argument.value === 'string') {
+        paths.add(argument.value)
+      }
+    })
+    return [...paths].sort()
+  }, [effectiveExpr])
+
+  const requestContext = useMemo(() => {
+    if (probePaths.length === 0) return undefined
+    const body: Record<string, string | number> = {}
+    for (const path of probePaths) {
+      const raw = (probeValues[path] ?? '').trim()
+      if (raw === '') continue
+      const numeric = Number(raw)
+      body[path] = Number.isFinite(numeric) && raw !== '' ? numeric : raw
+    }
+    return { request: { body } }
+  }, [probePaths, probeValues])
+
   const tokens = useMemo(() => {
     const values = buildEstimatorTokens(promptTokens, completionTokens, extras)
     if (lengthOverride.trim()) values.len = Number(lengthOverride)
@@ -1267,8 +1312,19 @@ function CostEstimator({ effectiveExpr, fullExpr, currency }: EstimatorProps) {
       evalExprLocally(effectiveExpr, promptTokens, completionTokens, extras, {
         tokens,
         now: billingTime === undefined ? undefined : new Date(billingTime),
+        // With no fields filled in, every probe is unknown: preview the branch
+        // an unspecified request would take instead of erroring out.
+        ...(requestContext ?? { tolerateMissingRequest: true }),
       }),
-    [effectiveExpr, promptTokens, completionTokens, extras, tokens, billingTime]
+    [
+      effectiveExpr,
+      promptTokens,
+      completionTokens,
+      extras,
+      tokens,
+      billingTime,
+      requestContext,
+    ]
   )
 
   return (
@@ -1318,6 +1374,36 @@ function CostEstimator({ effectiveExpr, fullExpr, currency }: EstimatorProps) {
           placeholder={t('Use the existing token total')}
         />
       </Field>
+      {probePaths.length > 0 && (
+        <div className='space-y-2'>
+          <div className='space-y-0.5'>
+            <Label className='text-xs'>{t('Request fields')}</Label>
+            <p className='text-muted-foreground text-xs'>
+              {t(
+                'These are read from the request. Leave a field empty to preview the branch an unspecified request takes.'
+              )}
+            </p>
+          </div>
+          <div className='grid grid-cols-2 gap-3'>
+            {probePaths.map((path) => (
+              <div key={path} className='space-y-1'>
+                <Label className='text-xs'>{path}</Label>
+                <Input
+                  aria-label={t('Request field {{path}}', { path })}
+                  value={probeValues[path] ?? ''}
+                  placeholder={t('Not provided')}
+                  onChange={(event) =>
+                    setProbeValues((prev) => ({
+                      ...prev,
+                      [path]: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {usesExtras && (
         <div className='grid grid-cols-2 gap-3'>
           {BILLING_EXTRA_VARS.map((variable) => {
@@ -1458,17 +1544,24 @@ Multimodal with audio:
 tier("base", p * 0.43 + c * 3.06 + img * 0.78 + ai * 3.81 + ao * 15.11)
 
 Image resolution tiers (per image, times the requested count):
-param("size") == "1024x1024"
-  ? tier("1k", per_call(0.03)) * param("n")
-  : tier("4k", per_call(0.05)) * param("n")
+(param("resolution") == "4k"
+  ? tier("4k", per_call(0.10))
+  : (param("resolution") == "2k" ? tier("2k", per_call(0.06)) : tier("1k", per_call(0.03)))
+) * param("n")
+
+Image sizes are normalised by the gateway before evaluation, so compare
+param("resolution") against "1k"/"2k"/"4k" instead of raw param("size") strings:
+"1024x1024" and "1024×1024" both become "1k", "auto" becomes the highest tier.
+To show a request value as a filter instead, param("size") still works.
 
 Video per-second price (works for task models too):
-tier("per_second", per_call(0.05)) * param("seconds")
+(tier("per_second", per_call(0.05))) * param("seconds")
 
 Video resolution tiers from task usage facts:
-u("resolution") == "1080p"
-  ? tier("1080p", per_call(0.6)) * u("seconds")
-  : tier("720p", per_call(0.4)) * u("seconds")
+(u("resolution") == "1080p"
+  ? tier("1080p", per_call(0.6))
+  : tier("720p", per_call(0.4))
+) * u("seconds")
 
 Three-tier example:
 len <= 128000
@@ -1483,8 +1576,9 @@ len <= 128000
 2. Use English tier names, e.g. "base", "standard", "long_context"
 3. Use len for tier conditions (not p), supports <, <=, >, >=
 4. Multi-tier uses nested ternary: cond1 ? tier(...) : (cond2 ? tier(...) : tier(...))
-5. Price coefficients are the provider's official $/1M tokens prices
-6. If cache/image/audio don't need separate pricing, omit those variables; their tokens are included in p/c automatically
+5. A multiplier that must scale the whole multi-tier tree has to wrap it in parentheses: (cond1 ? tier(...) : tier(...)) * param("n"). Written inside each branch it scales only that branch, which the visual editor cannot read.
+6. Price coefficients are the provider's official $/1M tokens prices
+7. If cache/image/audio don't need separate pricing, omit those variables; their tokens are included in p/c automatically
 
 Please generate a billing expression based on the model information and pricing requirements provided.`
 

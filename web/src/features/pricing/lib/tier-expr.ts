@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { BILLING_CACHE_VAR_MAP } from './billing-expr'
+import { flattenBinary } from './billing-expression/display'
 import {
   buildMultiplierText,
   normalizeMultiplierSpec,
@@ -27,6 +28,7 @@ import { compileBillingExpression } from './billing-expression/parser'
 import { evaluateBillingExpression } from './billing-expression/runtime'
 import type {
   BillingSimulationContext,
+  ExpressionNode,
   TokenVariable,
 } from './billing-expression/types'
 
@@ -86,6 +88,8 @@ function buildTierConditionExpr(condition: TierConditionInput): string {
 
 export type VisualTier = {
   billing_unit?: 'token' | 'request'
+  /** Spelling to regenerate for a request price; fixed and per_call are equal. */
+  request_price_callee?: 'fixed' | 'per_call'
   fixed_price?: string
   label: string
   conditions: TierConditionInput[]
@@ -182,7 +186,12 @@ function buildConditionStr(conditions: TierConditionInput[]): string {
 }
 
 function buildTierBodyExpr(tier: VisualTier): string {
-  if (tier.billing_unit === 'request') return `fixed(${tier.fixed_price ?? ''})`
+  if (tier.billing_unit === 'request') {
+    // Preserve the spelling the administrator stored: the round-trip check
+    // compares against the original source, and fixed/per_call are equivalent.
+    const callee = tier.request_price_callee === 'per_call' ? 'per_call' : 'fixed'
+    return `${callee}(${tier.fixed_price ?? ''})`
+  }
   const parts: string[] = []
   const ic = Number(tier.input_unit_cost) || 0
   const oc = Number(tier.output_unit_cost) || 0
@@ -307,7 +316,9 @@ export function tryParseVisualConfig(
       .join('')
 
     const bodyPat = `p\\s*\\*\\s*([\\d.eE+-]+)\\s*\\+\\s*c\\s*\\*\\s*([\\d.eE+-]+)${optCacheStr}`
-    const requestBodyPat = `fixed\\(\\s*([\\d.eE+-]+)\\s*\\)`
+    // Request-priced tiers: the editor writes fixed(...) while price lists and
+    // imported expressions often spell it per_call(...). Both are the same leaf.
+    const requestBodyPat = `(?:fixed|per_call)\\(\\s*([\\d.eE+-]+)\\s*\\)`
 
     const finish = (tiers: VisualTier[]): VisualConfig | null => {
       if (tiers.length === 0) return null
@@ -315,12 +326,11 @@ export function tryParseVisualConfig(
         tiers,
         ...(multiplier ? { multiplier } : {}),
       })
-      // The parse must reproduce the stored expression byte for byte (ignoring
-      // whitespace); otherwise the caller keeps the richer document editor.
-      const regenerated = generateExprFromVisualConfig(cfg)
-      if (
-        regenerated.replaceAll(/\s+/g, '') !== fullBody.replaceAll(/\s+/g, '')
-      ) {
+      // The parse must reproduce the stored expression; otherwise the caller
+      // keeps the richer document editor. Nested chains may or may not
+      // parenthesise each branch, so equivalence is checked on the normalised
+      // form rather than the literal text.
+      if (!expressionsEquivalent(generateExprFromVisualConfig(cfg), fullBody)) {
         return null
       }
       return cfg
@@ -365,68 +375,171 @@ export function tryParseVisualConfig(
           conditions: [],
           label: requestSimple[1],
           billing_unit: 'request',
+          request_price_callee: requestSimple[0].includes('per_call') ? 'per_call' : 'fixed',
           fixed_price: requestSimple[2],
         }),
       ])
     }
 
-    const numberCondition = `(?:p|c|len)\\s*(?:<|<=|>|>=)\\s*[\\d.eE+]+`
-    const requestCondition =
-      `(?:param|header|u)\\("(?:[^"]*)"\\)\\s*(?:==|!=|<|<=|>|>=)\\s*` +
-      `(?:nil|"[^"]*"|[\\d.eE+-]+)`
-    const anyCondition = `(?:${numberCondition}|${requestCondition})`
-    const condGroup = `((?:${anyCondition})(?:\\s*&&\\s*${anyCondition})*)`
-    const conditionsOf = (condStr: string): TierConditionInput[] => {
-      if (!condStr) return []
-      const conditions: TierConditionInput[] = []
-      for (const cp of condStr.split(/\s*&&\s*/)) {
-        const condition = parseTierCondition(cp.trim())
-        if (condition) conditions.push(condition)
-      }
-      return conditions
-    }
-
-    const tokenTierRe = new RegExp(
-      `(?:${condGroup}\\s*\\?\\s*)?tier\\("([^"]*)",\\s*${bodyPat}\\)`,
-      'g'
-    )
-    const tokenTiers: VisualTier[] = []
-    let match: RegExpExecArray | null
-    while ((match = tokenTierRe.exec(body)) !== null) {
-      const tier: Record<string, unknown> = {
-        conditions: conditionsOf(match[1] || ''),
-        input_unit_cost: Number(match[3]),
-        output_unit_cost: Number(match[4]),
-        label: match[2],
-      }
-      const m = match
-      BILLING_CACHE_VAR_MAP.forEach((cv, i) => {
-        const val = m[5 + i]
-        if (val != null) tier[cv.field] = Number(val)
-      })
-      tokenTiers.push(normalizeVisualTier(tier as Partial<VisualTier>))
-    }
-    if (tokenTiers.length > 0) return finish(tokenTiers)
-
-    const requestTierRe = new RegExp(
-      `(?:${condGroup}\\s*\\?\\s*)?tier\\("([^"]*)",\\s*${requestBodyPat}\\)`,
-      'g'
-    )
-    const requestTiers: VisualTier[] = []
-    while ((match = requestTierRe.exec(body)) !== null) {
-      requestTiers.push(
-        normalizeVisualTier({
-          conditions: conditionsOf(match[1] || ''),
-          label: match[2],
-          billing_unit: 'request',
-          fixed_price: match[3],
-        })
-      )
-    }
-    return finish(requestTiers)
+    // Walk the tier chain through the AST instead of a global regex: a chained
+    // ternary (`c1 ? t1 : c2 ? t2 : t3`) nests arbitrarily deep, and the source
+    // may or may not parenthesise each branch. Regex matching mis-attributed the
+    // conditions of the third tier and rejected 3+ tier expressions.
+    const tiers =
+      compiled.status === 'ready'
+        ? readTierChainFromAst(chain ? chain.tree : compiled.ast, exprStr)
+        : null
+    if (!tiers) return null
+    return finish(tiers)
   } catch {
     return null
   }
+}
+
+/**
+ * Whether two expressions differ only in whitespace and redundant parentheses.
+ * Recompiling both and stripping whitespace is enough here: the parser already
+ * rejects anything unsafe, and the caller only needs "did we read this
+ * faithfully?", not a byte-identical echo.
+ */
+function expressionsEquivalent(left: string, right: string): boolean {
+  const normalize = (value: string): string | null => {
+    const compiled = compileBillingExpression(value)
+    if (compiled.status !== 'ready') return null
+    return sourceShape(compiled.ast)
+  }
+  const a = normalize(left)
+  const b = normalize(right)
+  return a !== null && a === b
+}
+
+/** Structural shape with parentheses removed, for equivalence comparison. */
+function sourceShape(node: ExpressionNode): string {
+  switch (node.kind) {
+    case 'literal':
+      return `lit(${String(node.value)})`
+    case 'variable':
+      return `var(${node.name})`
+    case 'call':
+      return `call(${node.name},${node.args.map(sourceShape).join(',')})`
+    case 'unary':
+      return `un(${node.operator},${sourceShape(node.operand)})`
+    case 'binary':
+      return `bin(${node.operator},${sourceShape(node.left)},${sourceShape(node.right)})`
+    case 'conditional':
+      return `cond(${sourceShape(node.condition)},${sourceShape(node.yes)},${sourceShape(node.no)})`
+    default:
+      return 'unknown'
+  }
+}
+
+type ChainTier = { node: ExpressionNode; conditions: TierConditionInput[] }
+
+/**
+ * Reads the canonical tier chain `cond1 ? tier1 : cond2 ? tier2 : ... : tierN`
+ * from the AST. Returns null for any other shape so the caller keeps the raw
+ * expression rather than inventing prices.
+ */
+function readTierChainFromAst(
+  node: ExpressionNode,
+  source: string
+): VisualTier[] | null {
+  const chain: ChainTier[] = []
+  let remaining = node
+  while (remaining.kind === 'conditional') {
+    const conditions = readChainConditions(remaining.condition, source)
+    if (!conditions) return null
+    chain.push({ node: remaining.yes, conditions })
+    // `a ? b : (c ? d : e)` and `a ? b : c ? d : e` parse identically in the AST.
+    remaining = remaining.no
+  }
+  chain.push({ node: remaining, conditions: [] })
+
+  const tiers: VisualTier[] = []
+  for (const entry of chain) {
+    const tier = tierFromCallNode(entry.node, entry.conditions, source)
+    if (!tier) return null
+    tiers.push(tier)
+  }
+  return tiers
+}
+
+function readChainConditions(
+  node: ExpressionNode,
+  source: string
+): TierConditionInput[] | null {
+  const conditions: TierConditionInput[] = []
+  for (const part of flattenBinary(node, '&&')) {
+    const text = source.slice(part.start, part.end).trim()
+    const condition = text ? parseTierCondition(text) : null
+    if (!condition) return null
+    conditions.push(condition)
+  }
+  return conditions.length > 0 ? conditions : null
+}
+
+/** Converts one `tier("label", ...)` call into the editor's tier shape. */
+function tierFromCallNode(
+  node: ExpressionNode,
+  conditions: TierConditionInput[],
+  source: string
+): VisualTier | null {
+  if (
+    node.kind !== 'call' ||
+    node.name !== 'tier' ||
+    node.args[0]?.kind !== 'literal' ||
+    typeof node.args[0].value !== 'string'
+  ) {
+    return null
+  }
+  const label = node.args[0].value
+  const body = node.args[1]
+  if (
+    body.kind === 'call' &&
+    isRequestPriceCallee(body.name) &&
+    body.args[0]?.kind === 'literal' &&
+    typeof body.args[0].value === 'number'
+  ) {
+    // Keep the literal exactly as written: the round-trip check compares against
+    // the stored source, so 0.10 must not collapse to 0.1.
+    return normalizeVisualTier({
+      conditions,
+      label,
+      billing_unit: 'request',
+      request_price_callee: body.name === 'per_call' ? 'per_call' : 'fixed',
+      fixed_price: source.slice(body.args[0].start, body.args[0].end),
+    })
+  }
+  if (body.kind !== 'binary' && body.kind !== 'call') return null
+  const prices = new Map<string, number>()
+  for (const term of flattenBinary(body, '+')) {
+    if (
+      term.kind !== 'binary' ||
+      term.operator !== '*' ||
+      term.left.kind !== 'variable' ||
+      term.right.kind !== 'literal' ||
+      typeof term.right.value !== 'number'
+    ) {
+      return null
+    }
+    if (Number.isNaN(term.right.value)) return null
+    prices.set(term.left.name, term.right.value)
+  }
+  if (!prices.has('p') || !prices.has('c')) return null
+  const tier: Record<string, unknown> = {
+    conditions,
+    label,
+    input_unit_cost: prices.get('p'),
+    output_unit_cost: prices.get('c'),
+  }
+  for (const cv of BILLING_CACHE_VAR_MAP) {
+    if (prices.has(cv.exprVar)) tier[cv.field] = prices.get(cv.exprVar)
+  }
+  return normalizeVisualTier(tier as Partial<VisualTier>)
+}
+
+function isRequestPriceCallee(name: string): boolean {
+  return name === 'fixed' || name === 'per_call'
 }
 
 // ---------------------------------------------------------------------------

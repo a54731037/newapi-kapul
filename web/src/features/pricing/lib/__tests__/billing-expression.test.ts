@@ -825,33 +825,33 @@ describe('flat tier conditions with request fields', () => {
     ).toBeNull()
   })
 
-  test('round-trips an enumerated unit list on the flat config', () => {
-    const config: VisualConfig = {
-      ...normalizeVisualConfig({
-        tiers: [
-          normalizeVisualTier({
-            label: 'per_second',
-            conditions: [],
-            billing_unit: 'request',
-            fixed_price: '0.05',
-          }),
-        ],
-      }),
-      multiplier: { probe: 'param', key: 'seconds', mode: 'units', units: [2, 3] },
-    }
-    const expression = generateExprFromVisualConfig(config)
-    expect(expression).toBe(
-      '(tier("per_second", fixed(0.05))) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "3" ? 3 : 1)'
-    )
+  test('opens a three-tier per_call chain with a whole-tree factor', () => {
+    // The flat model used to reject 3+ tiers (nested ternaries) and per_call
+    // leaves, which forced resolution-tier expressions into raw mode.
+    const expression =
+      '(param("resolution") == "4k" ? tier("4k", per_call(0.10)) : (param("resolution") == "2k" ? tier("2k", per_call(0.06)) : tier("1k", per_call(0.03)))) * param("n")'
     const parsed = tryParseVisualConfig(expression)
     assert(parsed)
+    expect(parsed.tiers.map((tier) => [tier.label, tier.fixed_price])).toEqual([
+      ['4k', '0.10'],
+      ['2k', '0.06'],
+      ['1k', '0.03'],
+    ])
+    expect(
+      parsed.tiers.every((tier) => tier.request_price_callee === 'per_call')
+    ).toBe(true)
     expect(parsed.multiplier).toEqual({
       probe: 'param',
-      key: 'seconds',
-      mode: 'units',
-      units: [2, 3],
+      key: 'n',
+      mode: 'value',
+      units: [],
     })
-    expect(generateExprFromVisualConfig(parsed)).toBe(expression)
+    // Regeneration may drop redundant parentheses; it must stay equivalent.
+    const regenerated = generateExprFromVisualConfig(parsed)
+    expect(compileBillingExpression(regenerated).status).toBe('ready')
+    const reparsed = tryParseVisualConfig(regenerated)
+    assert(reparsed)
+    expect(reparsed.tiers.map((tier) => tier.label)).toEqual(['4k', '2k', '1k'])
   })
 
   test('rejects enumerated factors that are not per-unit or mix probes', () => {

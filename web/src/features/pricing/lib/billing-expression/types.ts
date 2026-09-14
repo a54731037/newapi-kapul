@@ -152,6 +152,13 @@ export type BillingSimulationContext = {
   tokens?: Partial<Record<TokenVariable, number>>
   /** Absent means unknown. An explicitly provided empty request means empty. */
   request?: { body?: unknown; headers?: Record<string, string> }
+  /**
+   * Treat a missing request as "every probe is unknown" instead of failing the
+   * evaluation. The cost estimator uses this so an expression with param()
+   * conditions still previews a price; the tier it reports is the one that
+   * matches an unspecified request.
+   */
+  tolerateMissingRequest?: boolean
   usage?: Record<string, unknown>
   now?: Date
 }

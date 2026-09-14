@@ -479,6 +479,25 @@ it('shows the estimated token cost in the selected currency while token quantiti
   expect(screen.getByText('Estimated cost: ¥14')).toBeVisible()
 })
 
+it('previews a request-field expression instead of reporting a missing request body', () => {
+  renderEditor({
+    billingMode: 'tiered_expr',
+    billingExpr:
+      'param("resolution") == "4k" ? tier("4k", per_call(0.10)) : tier("1k", per_call(0.03))',
+  })
+  // The estimator has no request, so every probe is unknown rather than an error.
+  expect(screen.queryByText(/Expression error/)).not.toBeInTheDocument()
+  expect(screen.getByText(/Estimated cost/)).toBeVisible()
+  expect(screen.getByText('Request fields')).toBeVisible()
+  const field = screen.getByRole('textbox', {
+    name: 'Request field resolution',
+  })
+  fireEvent.change(field, { target: { value: '4k' } })
+  expect(screen.getByText(/Estimated cost/).parentElement).toHaveTextContent(
+    'Estimated cost: $0.1'
+  )
+})
+
 it('keeps an empty per-request amount empty when currencies change', async () => {
   const editor = renderEditor({
     billingMode: 'per-request',

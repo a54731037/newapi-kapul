@@ -520,6 +520,9 @@ class BillingRuntime {
       case 'param': {
         const path = this.string(args[0])
         if (!this.context.request) {
+          // The estimator previews prices without a request; every probe is
+          // unknown there rather than an error.
+          if (this.context.tolerateMissingRequest) return { value: null }
           throw new BillingExpressionError({
             code: 'missing_context',
             detail: 'request body',
@@ -531,6 +534,7 @@ class BillingRuntime {
       case 'header': {
         const name = this.string(args[0]).trim().toLowerCase()
         if (!this.context.request) {
+          if (this.context.tolerateMissingRequest) return { value: '' }
           throw new BillingExpressionError({
             code: 'missing_context',
             detail: 'request headers',
