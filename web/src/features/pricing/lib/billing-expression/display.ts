@@ -17,28 +17,45 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { BillingUsageSchema } from '../../types'
+import { readFactorChain } from './multiplier'
 import { compileBillingExpression } from './parser'
 import { evaluateBillingCondition } from './runtime'
 import {
   TIME_FUNCTIONS,
   expressionDependencies,
   isRequestPriceFunction,
+  isRequestProbe,
   type ExpressionNode,
   type CompiledBillingExpression,
   type TokenVariable,
 } from './types'
+
+const COMPARISONS = new Set(['<', '<=', '>', '>=', '==', '!='])
 
 export type TokenTierCondition = {
   var: 'p' | 'c' | 'len'
   op: '<' | '<=' | '>' | '>='
   value: number
 }
+
+/** A request-probe condition displayed verbatim, e.g. param("size") == "1024x1024". */
+export type RequestTierCondition = {
+  kind: 'request'
+  text: string
+}
+
+export type DisplayTierCondition = TokenTierCondition | RequestTierCondition
+
 export type TokenTier = {
   billingUnit?: 'token' | 'request'
   fixedPrice?: number
   label: string
   conditions: TokenTierCondition[]
+  /** Request-probe conditions shown as their stored text. */
+  requestConditions?: string[]
   prices: Partial<Record<TokenVariable, number>>
+  /** Request factor scaling the whole tree, e.g. `param("n")`. */
+  multiplierText?: string
 }
 export type TimeTokenTier = TokenTier & {
   conditionText: string
@@ -56,27 +73,66 @@ export function flattenBinary(
   ]
 }
 
-function tokenConditions(node: ExpressionNode): TokenTierCondition[] | null {
-  const conditions: TokenTierCondition[] = []
+/**
+ * Splits a tier condition into the token bounds the price table can compare and
+ * the request-probe comparisons (size/resolution/seconds...) shown as text. Any
+ * other shape returns null so the caller keeps the raw expression.
+ */
+function tokenConditions(
+  node: ExpressionNode,
+  source: string
+): { bounds: TokenTierCondition[]; requests: string[] } | null {
+  const bounds: TokenTierCondition[] = []
+  const requests: string[] = []
   for (const part of flattenBinary(node, '&&')) {
     if (
-      part.kind !== 'binary' ||
-      !['<', '<=', '>', '>='].includes(part.operator) ||
-      part.left.kind !== 'variable' ||
-      !['p', 'c', 'len'].includes(part.left.name) ||
-      part.right.kind !== 'literal' ||
-      typeof part.right.value !== 'number' ||
-      part.right.value < 0
+      part.kind === 'binary' &&
+      ['<', '<=', '>', '>='].includes(part.operator) &&
+      part.left.kind === 'variable' &&
+      ['p', 'c', 'len'].includes(part.left.name) &&
+      part.right.kind === 'literal' &&
+      typeof part.right.value === 'number' &&
+      part.right.value >= 0
     ) {
-      return null
+      bounds.push({
+        var: part.left.name as TokenTierCondition['var'],
+        op: part.operator as TokenTierCondition['op'],
+        value: part.right.value,
+      })
+      continue
     }
-    conditions.push({
-      var: part.left.name as TokenTierCondition['var'],
-      op: part.operator as TokenTierCondition['op'],
-      value: part.right.value,
-    })
+    if (isRequestComparison(part)) {
+      requests.push(source.slice(part.start, part.end))
+      continue
+    }
+    return null
   }
-  return conditions
+  if (bounds.length === 0 && requests.length === 0) return null
+  return { bounds, requests }
+}
+
+/**
+ * A request comparison is `param|header|u("key") <op> value`; `||` groups of
+ * them are accepted too because the pricing editor generates that shape for
+ * resolution tiers.
+ */
+function isRequestComparison(node: ExpressionNode): boolean {
+  if (node.kind === 'binary' && ['||', '&&'].includes(node.operator)) {
+    return flattenBinary(node, node.operator).every(isRequestComparison)
+  }
+  if (node.kind !== 'binary' || !COMPARISONS.has(node.operator)) return false
+  const left = node.left
+  if (left.kind !== 'call' || !isRequestProbe(left.name)) return false
+  const argument = left.args[0]
+  if (
+    left.args.length !== 1 ||
+    argument?.kind !== 'literal' ||
+    typeof argument.value !== 'string'
+  ) {
+    return false
+  }
+  const right = node.right
+  return right.kind === 'literal'
 }
 
 function nonnegativePriceLiteral(node: ExpressionNode): number | null {
@@ -100,7 +156,8 @@ function nonnegativePriceLiteral(node: ExpressionNode): number | null {
 
 function tokenTier(
   node: ExpressionNode,
-  conditions: TokenTierCondition[]
+  bounds: TokenTierCondition[],
+  requestConditions: string[]
 ): TokenTier | null {
   if (
     node.kind !== 'call' ||
@@ -110,6 +167,9 @@ function tokenTier(
   ) {
     return null
   }
+  const conditions: TokenTierCondition[] = bounds
+  const requests =
+    requestConditions.length > 0 ? requestConditions : undefined
   const prices: TokenTier['prices'] = {}
   const body = node.args[1]
   if (
@@ -121,6 +181,7 @@ function tokenTier(
     return {
       label: node.args[0].value,
       conditions,
+      ...(requests ? { requestConditions: requests } : {}),
       prices,
       billingUnit: 'request',
       fixedPrice: body.args[0].value,
@@ -140,22 +201,48 @@ function tokenTier(
     prices[term.left.name] = nonnegativePriceLiteral(term.right) ?? 0
   }
   if (Object.keys(prices).length === 0) return null
-  return { label: node.args[0].value, conditions, prices }
+  return {
+    label: node.args[0].value,
+    conditions,
+    ...(requests ? { requestConditions: requests } : {}),
+    prices,
+  }
 }
 
-/** Legacy token summary contract: ordered linear chain, never a minimum or partial price extraction. */
-export function readTokenTierChain(node: ExpressionNode): TokenTier[] | null {
+/**
+ * Legacy token summary contract: ordered linear chain, never a minimum or
+ * partial price extraction. Request-probe conditions are carried through as
+ * text; a whole-tree request factor (`(<tree>) * param("n")`) is attached to
+ * every tier so the table can show the per-unit basis.
+ */
+export function readTokenTierChain(
+  node: ExpressionNode,
+  source = ''
+): TokenTier[] | null {
+  const chain = readFactorChain(node)
+  const tiers = readLinearTierChain(chain ? chain.tree : node, source)
+  if (!tiers) return null
+  if (!chain) return tiers
+  const factorText = source.slice(chain.tree.end, node.end).trim()
+  if (!factorText) return null
+  return tiers.map((tier) => ({ ...tier, multiplierText: factorText }))
+}
+
+function readLinearTierChain(
+  node: ExpressionNode,
+  source: string
+): TokenTier[] | null {
   const tiers: TokenTier[] = []
   let remaining = node
   while (remaining.kind === 'conditional') {
-    const conditions = tokenConditions(remaining.condition)
+    const conditions = tokenConditions(remaining.condition, source)
     if (!conditions) return null
-    const tier = tokenTier(remaining.yes, conditions)
+    const tier = tokenTier(remaining.yes, conditions.bounds, conditions.requests)
     if (!tier) return null
     tiers.push(tier)
     remaining = remaining.no
   }
-  const fallback = tokenTier(remaining, [])
+  const fallback = tokenTier(remaining, [], [])
   if (!fallback) return null
   return [...tiers, fallback]
 }
@@ -190,7 +277,7 @@ function timeTierBranches(
     if (!yes || !no) return null
     return [...yes, ...no]
   }
-  const tiers = readTokenTierChain(node)
+  const tiers = readTokenTierChain(node, compiled.source)
   if (!tiers || path.length === 0) return null
   const timeDescription = path
     .map(({ condition, matches }) => {
@@ -206,6 +293,7 @@ function timeTierBranches(
       ...tier.conditions.map(
         (condition) => `${condition.var} ${condition.op} ${condition.value}`
       ),
+      ...(tier.requestConditions ?? []),
     ].join(' && '),
   }))
 }

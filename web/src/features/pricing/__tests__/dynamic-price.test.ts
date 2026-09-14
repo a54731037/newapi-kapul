@@ -20,7 +20,7 @@ import assert from 'node:assert/strict'
 
 import { describe, expect, test } from 'vitest'
 
-import { parseTiersFromExpr } from '../lib/billing-expr'
+import { parseTiersFromExpr, type ParsedTaskTier } from '../lib/billing-expr'
 import { getBillingModeLabelKey } from '../lib/billing-mode'
 import {
   getCardExamplePrice,
@@ -29,9 +29,17 @@ import {
   getTaskUsagePriceUnitLabelKey,
   hasTaskUsageSchema,
   isUnconfiguredTaskUsageModel,
+  type DynamicPricingTier,
 } from '../lib/dynamic-price'
 import { isTokenBasedModel } from '../lib/model-helpers'
 import type { PricingModel } from '../types'
+
+/** Task tiers carry unitPrices; token/request tiers do not. */
+function isTaskTier(
+  tier: DynamicPricingTier | Partial<DynamicPricingTier>
+): tier is ParsedTaskTier {
+  return 'unitPrices' in tier
+}
 
 function pricingModel(overrides: Partial<PricingModel>): PricingModel {
   return {
@@ -172,6 +180,33 @@ describe('expression price summaries', () => {
     expect(summary?.primaryEntries.map((entry) => entry.value)).toEqual([2, 8])
     expect(summary?.hasRequestRules).toBe(true)
   })
+  test('parses request-probe tiers with per-call prices and a unit multiplier', () => {
+    const expression =
+      '(param("resolution") == "1k" || param("size") == "1024x1024" ? tier("1k", per_call(0.06)) : (param("resolution") == "2k" || (param("size") != "2160×3840") ? tier("2k", per_call(0.06)) : tier("4k", per_call(0.01))) ) * param("n")'
+    const summary = getDynamicPricingSummary(
+      pricingModel({ billing_mode: 'tiered_expr', billing_expr: expression }),
+      { tokenUnit: 'M' }
+    )
+
+    // The plaza must show a tier table, not the special-expression fallback.
+    expect(summary?.isSpecialExpression).toBe(false)
+    expect(summary?.tiers.map((tier) => tier.label)).toEqual(['1k', '2k', '4k'])
+    expect(
+      summary?.tiers.map((tier) => (isTaskTier(tier) ? null : tier.fixedPrice))
+    ).toEqual([0.06, 0.06, 0.01])
+    // Request-probe conditions survive for display.
+    const first = summary?.tiers[0]
+    expect(
+      first && !isTaskTier(first) ? first.requestConditions : null
+    ).toEqual(['param("resolution") == "1k" || param("size") == "1024x1024"'])
+    // The whole-tree factor is exposed once for the table.
+    expect(
+      summary?.tiers.every(
+        (tier) => !isTaskTier(tier) && tier.multiplierText === '* param("n")'
+      )
+    ).toBe(true)
+  })
+
   test.each([
     'tier("custom", max(p * 2 + c * 8, 100))',
     'tier("base", p * 2 + c * 8) * 3',

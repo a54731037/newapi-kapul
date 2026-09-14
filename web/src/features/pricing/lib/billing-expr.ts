@@ -259,6 +259,10 @@ export type ParsedTier = {
   billingUnit?: 'token' | 'request'
   fixedPrice?: number
   conditionText?: string
+  /** Request-probe conditions (size/resolution/seconds...) shown as text. */
+  requestConditions?: string[]
+  /** Request factor scaling the whole tree, e.g. `param("n")`. */
+  multiplierText?: string
   label: string
   conditions: TierCondition[]
   [field: string]: unknown
@@ -290,6 +294,10 @@ function mapTokenTier(
       ? { billingUnit: tier.billingUnit, fixedPrice: tier.fixedPrice }
       : {}),
     ...(tier.conditionText ? { conditionText: tier.conditionText } : {}),
+    ...(tier.requestConditions?.length
+      ? { requestConditions: tier.requestConditions }
+      : {}),
+    ...(tier.multiplierText ? { multiplierText: tier.multiplierText } : {}),
     ...Object.fromEntries(
       Object.entries(tier.prices).map(([key, price]) => [
         BILLING_VAR_KEY_TO_FIELD[key],
@@ -303,7 +311,7 @@ export function parseTiersFromExpr(exprStr: string): ParsedTier[] {
   if (!exprStr) return []
   const compiled = compileBillingExpression(exprStr)
   if (compiled.status !== 'ready') return []
-  const canonical = readTokenTierChain(compiled.ast)
+  const canonical = readTokenTierChain(compiled.ast, compiled.source)
   if (canonical) return canonical.map(mapTokenTier)
   return readTimeTokenPricing(exprStr)?.tiers.map(mapTokenTier) ?? []
 }
