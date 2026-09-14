@@ -49,6 +49,24 @@ it('shows an explicit free request price alongside token prices with distinct un
   expect(screen.getAllByText('Price per request').length).toBeGreaterThan(0)
 })
 
+it('keeps request expressions out of the tier price table', () => {
+  // The plaza table lists tiers and prices; probe conditions and the whole-tree
+  // factor are implementation detail that belongs in the raw expression only.
+  const { container } = render(
+    <DynamicPricingBreakdown billingExpr='(param("resolution") == "1k" || param("size") == "1024x1024" ? tier("1k", per_call(0.06)) : (param("resolution") == "2k" || (param("size") != "2160×3840") ? tier("2k", per_call(0.06)) : tier("4k", per_call(0.01))) ) * param("n")' />
+  )
+  const text = container.textContent ?? ''
+  expect(screen.getByText('Tiered price table')).toBeTruthy()
+  expect(screen.queryByText('Special billing expression')).toBeNull()
+  expect(text).not.toContain('param(')
+  expect(text).not.toContain('resolution')
+  for (const label of ['1k', '2k', '4k']) {
+    expect(screen.getAllByText(label).length).toBeGreaterThan(0)
+  }
+  expect(screen.getAllByText('$0.06/request').length).toBeGreaterThan(0)
+  expect(screen.getAllByText('$0.01/request').length).toBeGreaterThan(0)
+})
+
 it('renders weekday and hour conditions as time windows instead of expression source', () => {
   const condition =
     'weekday("Asia/Shanghai") >= 1 && weekday("Asia/Shanghai") <= 5 && ((hour("Asia/Shanghai") >= 9 && hour("Asia/Shanghai") < 12) || (hour("Asia/Shanghai") >= 14 && hour("Asia/Shanghai") < 18))'

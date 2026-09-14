@@ -176,20 +176,19 @@ function formatBreakdownConditionSummary(
   tierCount: number
 ): string {
   if (!isTaskBreakdownTier(tier)) {
+    // The price table is a per-tier price list, so it stays free of request
+    // expressions: probe conditions (resolution/size/seconds) and the
+    // whole-tree factor are implementation detail kept in the raw expression.
+    // Only token bounds that genuinely describe usage ranges are shown.
     if (tier.conditionText) {
       const formatted = formatBillingCondition(
         tier.conditionText,
         t,
         language
       )
-      if (formatted) return formatted
+      return formatted ?? ''
     }
-    // Request-probe conditions (size/resolution/seconds) render verbatim; the
-    // legacy formatter only understands token bounds and time windows.
-    const requestPart = (tier.requestConditions ?? []).join(' && ')
-    const tokenPart = formatConditionSummary(tier.conditions, t)
-    const combined = [tokenPart, requestPart].filter(Boolean).join(' && ')
-    return combined || t(tierCount > 1 ? 'Other cases' : 'All requests')
+    return formatConditionSummary(tier.conditions, t)
   }
   return (
     taskPricingConditions(tier.conditions, schema, language, t) ||
@@ -430,11 +429,6 @@ export function DynamicPricingBreakdown({
   })()
   const mobileTierKeyOccurrences = new Map<string, number>()
   const requestRuleKeyOccurrences = new Map<string, number>()
-  // A whole-tree request factor such as `* param("n")` prices the row per unit,
-  // so it is surfaced once for the table instead of per tier.
-  const multiplierText = tiers
-    .map((tier) => (!isTaskBreakdownTier(tier) ? tier.multiplierText : null))
-    .find((text): text is string => Boolean(text))
 
   return (
     <section className={cn('min-w-0', !compact && 'py-3 sm:py-4')}>
@@ -466,13 +460,6 @@ export function DynamicPricingBreakdown({
             >
               {t('Tiered price table')}
             </div>
-          )}
-          {multiplierText && (
-            <p className='text-muted-foreground mb-2 text-xs'>
-              {t('Each unit is multiplied by {{factor}}', {
-                factor: multiplierText,
-              })}
-            </p>
           )}
           <div className='space-y-1.5 sm:hidden'>
             {tiers.map((tier) => {
