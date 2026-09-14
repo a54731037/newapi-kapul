@@ -1,6 +1,7 @@
 name: Publish branch image (GHCR + Docker Hub, multi-arch)
 
-# Manual pre-release publisher for a branch, e.g.:
+# Pre-release publisher for a branch. Runs automatically on every push to the
+# default branch and can still be dispatched manually, e.g.:
 #   gh workflow run docker-image-branch.yml -f branch=main
 # It pushes two moving tags per registry and never touches `latest`, so it can
 # run alongside the release workflow (docker-build.yml):
@@ -10,12 +11,21 @@ name: Publish branch image (GHCR + Docker Hub, multi-arch)
 # Registries: GHCR via the built-in GITHUB_TOKEN, Docker Hub via secret KAPUL.
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       branch:
         description: 'Branch, tag or SHA to build (e.g. main)'
         required: true
         type: string
+
+# Serialize runs so two consecutive pushes cannot interleave writes to the same
+# moving tag and leave the multi-arch manifest rebuilt from a half-published pair.
+concurrency:
+  group: branch-image-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   prepare:
@@ -33,12 +43,12 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1
-          ref: ${{ inputs.branch }}
+          ref: ${{ inputs.branch || github.ref }}
 
       - name: Resolve image tags
         id: version
         env:
-          REF_NAME: ${{ inputs.branch }}
+          REF_NAME: ${{ inputs.branch || github.ref_name }}
         run: |
           TAG_PREFIX=$(printf '%s' "$REF_NAME" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_.-]+/-/g; s/^[.-]+//; s/[.-]+$//')
           TAG_PREFIX=${TAG_PREFIX:0:105}
