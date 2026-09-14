@@ -20,7 +20,13 @@ func TestNormalizeImageResolutionTiers(t *testing.T) {
 		{name: "square 1k", size: "1024x1024", want: ImageResolution1K},
 		{name: "fullwidth multiplication sign", size: "1024×1024", want: ImageResolution1K},
 		{name: "uppercase separator", size: "1024X1024", want: ImageResolution1K},
-		{name: "landscape just under 2k", size: "1536x1024", want: ImageResolution2K},
+		// The 1k ceiling is the long edge, not the area: a tall 1024x1500 is 1k.
+		{name: "portrait 1024x1500 stays 1k", size: "1024x1500", want: ImageResolution1K},
+		{name: "landscape 1536x1024 is 1k", size: "1536x1024", want: ImageResolution1K},
+		{name: "landscape 1344x768 is 1k", size: "1344x768", want: ImageResolution1K},
+		{name: "long edge exactly 1600 is 1k", size: "1600x900", want: ImageResolution1K},
+		{name: "long edge 1601 crosses into 2k", size: "1601x900", want: ImageResolution2K},
+		{name: "portrait 1024x1792 is 2k", size: "1024x1792", want: ImageResolution2K},
 		{name: "square 2048", size: "2048x2048", want: ImageResolution2K},
 		{name: "portrait 2160x3840 halfwidth", size: "2160x3840", want: ImageResolution4K},
 		{name: "portrait 2160×3840 fullwidth", size: "2160×3840", want: ImageResolution4K},
@@ -47,10 +53,10 @@ func TestNormalizeImageResolutionTiers(t *testing.T) {
 }
 
 func TestApplyImageResolutionToBillingInput(t *testing.T) {
-	body := []byte(`{"model":"gpt-image-1","size":"1344x768","n":2}`)
+	body := []byte(`{"model":"gpt-image-1","size":"1024x1792","n":2}`)
 	input := ApplyImageResolutionToBillingInput(billingexpr.RequestInput{Body: body})
 	require.NotNil(t, input.Params)
-	// Long edge 1344 is above the 1k boundary, so this request is 2k.
+	// Long edge 1792 is above the 1600 boundary, so this request is 2k.
 	assert.Equal(t, ImageResolution2K, input.Params["resolution"])
 
 	square := ApplyImageResolutionToBillingInput(billingexpr.RequestInput{
@@ -87,7 +93,8 @@ func TestImageResolutionDrivesExpressionTiers(t *testing.T) {
 	}{
 		{size: "1024x1024", tier: "1k", cost: 30000},
 		{size: "1024×1024", tier: "1k", cost: 30000},
-		{size: "1536x1024", tier: "2k", cost: 60000},
+		{size: "1024x1500", tier: "1k", cost: 30000},
+		{size: "1024x1792", tier: "2k", cost: 60000},
 		{size: "2160x3840", tier: "4k", cost: 100000},
 		{size: "2160×3840", tier: "4k", cost: 100000},
 		{size: "auto", tier: "4k", cost: 100000},

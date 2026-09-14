@@ -23,11 +23,11 @@ const (
 // Long-edge pixel boundaries, chosen so the provider presets administrators
 // expect land in the documented tier:
 //
-//	1k: long edge <= 1280  (1024x1024, 1280x720)
-//	2k: 1281 .. 3072       (1344x768, 1536x1024, 2048x2048, 2560x1440)
+//	1k: long edge <= 1600  (1024x1024, 1280x720, 1344x768, 1536x1024)
+//	2k: 1601 .. 3072       (1024x1792, 2048x2048, 2560x1440)
 //	4k: >= 3073            (2160x3840, 3840x2160, 4096x4096)
 const (
-	imageResolution2KMinLongEdge = 1281
+	imageResolution2KMinLongEdge = 1601
 	imageResolution4KMinLongEdge = 3073
 )
 
