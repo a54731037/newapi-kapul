@@ -226,6 +226,10 @@ func validateOptionValue(key string, value string) error {
 	if key == "MaxTokenAutoGroups" {
 		return setting.ValidateMaxTokenAutoGroups(value)
 	}
+	// 自定义顶部导航链接会原样进入前端 href，前端校验不能替代服务端校验。
+	if key == "HeaderNavCustomLinks" {
+		return operation_setting.ValidateHeaderNavCustomLinks(value)
+	}
 	// 邀请返利配置直接参与额度计算（邀请奖励、充值返佣），前端校验不能替代服务端校验。
 	if key == "QuotaForInviter" || key == "QuotaForInvitee" {
 		reward, err := strconv.Atoi(strings.TrimSpace(value))

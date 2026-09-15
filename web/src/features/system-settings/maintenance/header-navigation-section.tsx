@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
@@ -31,6 +31,11 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Switch } from '@/components/ui/switch'
+import {
+  hasInvalidHeaderNavCustomLink,
+  serializeHeaderNavCustomLinks,
+  type HeaderNavCustomLink,
+} from '@/lib/nav-custom-links'
 
 import {
   SettingsControlChildren,
@@ -47,6 +52,7 @@ import {
   type HeaderNavModulesConfig,
   serializeHeaderNavModules,
 } from './config'
+import { HeaderNavCustomLinksEditor } from './header-nav-custom-links-editor'
 
 const headerNavSchema = z.object({
   home: z.boolean(),
@@ -64,6 +70,7 @@ type HeaderNavFormValues = z.infer<typeof headerNavSchema>
 type HeaderNavigationSectionProps = {
   config: HeaderNavModulesConfig
   initialSerialized: string
+  customLinks: HeaderNavCustomLink[]
 }
 
 const toFormValues = (config: HeaderNavModulesConfig): HeaderNavFormValues => ({
@@ -100,10 +107,17 @@ const toFormValues = (config: HeaderNavModulesConfig): HeaderNavFormValues => ({
 export function HeaderNavigationSection({
   config,
   initialSerialized,
+  customLinks: initialCustomLinks,
 }: HeaderNavigationSectionProps) {
   const { t } = useTranslation()
   const updateOption = useUpdateOption()
   const formDefaults = useMemo(() => toFormValues(config), [config])
+  const [customLinks, setCustomLinks] =
+    useState<HeaderNavCustomLink[]>(initialCustomLinks)
+  const initialCustomLinksSerialized = useMemo(
+    () => serializeHeaderNavCustomLinks(initialCustomLinks),
+    [initialCustomLinks]
+  )
 
   const form = useForm<HeaderNavFormValues>({
     resolver: zodResolver(headerNavSchema),
@@ -134,18 +148,26 @@ export function HeaderNavigationSection({
     }
 
     const serialized = serializeHeaderNavModules(payload)
-    if (serialized === initialSerialized) {
-      return
+    if (serialized !== initialSerialized) {
+      await updateOption.mutateAsync({
+        key: 'HeaderNavModules',
+        value: serialized,
+      })
     }
 
-    await updateOption.mutateAsync({
-      key: 'HeaderNavModules',
-      value: serialized,
-    })
+    // 自定义 tab 是独立配置项，只在内容变化时写入，避免每次保存都覆盖它。
+    const customLinksSerialized = serializeHeaderNavCustomLinks(customLinks)
+    if (customLinksSerialized !== initialCustomLinksSerialized) {
+      await updateOption.mutateAsync({
+        key: 'HeaderNavCustomLinks',
+        value: customLinksSerialized,
+      })
+    }
   }
 
   const resetToDefault = () => {
     form.reset(toFormValues(HEADER_NAV_DEFAULT))
+    setCustomLinks([])
   }
 
   const simpleModules: Array<{
@@ -216,6 +238,7 @@ export function HeaderNavigationSection({
             onSave={form.handleSubmit(onSubmit)}
             onReset={resetToDefault}
             isSaving={updateOption.isPending}
+            isSaveDisabled={hasInvalidHeaderNavCustomLink(customLinks)}
             resetLabel='Reset to default'
             saveLabel='Save navigation'
           />
@@ -294,6 +317,11 @@ export function HeaderNavigationSection({
               </SettingsControlGroup>
             ))}
           </div>
+
+          <HeaderNavCustomLinksEditor
+            links={customLinks}
+            onChange={setCustomLinks}
+          />
         </SettingsForm>
       </Form>
     </SettingsSection>

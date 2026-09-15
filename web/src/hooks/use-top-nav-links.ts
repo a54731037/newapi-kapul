@@ -20,6 +20,10 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
+import {
+  isRenderableHeaderNavCustomLink,
+  parseHeaderNavCustomLinks,
+} from '@/lib/nav-custom-links'
 import { parseHeaderNavModulesFromStatus } from '@/lib/nav-modules'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -104,6 +108,23 @@ export function useTopNavLinks(): TopNavLink[] {
   // About
   if (modules?.about !== false) {
     links.push({ title: t('About'), href: '/about' })
+  }
+
+  // Administrator-defined tabs. Names are operator copy, not translation keys,
+  // so a missing entry in the locale files leaves them exactly as typed.
+  // Entries that fail validation are skipped: a legacy value must not be able
+  // to put an unsafe href in the header, and the operator can still fix it in
+  // System Settings, where the raw list is shown.
+  const customLinks = parseHeaderNavCustomLinks(
+    status?.HeaderNavCustomLinks as unknown
+  )
+  for (const link of customLinks) {
+    if (!isRenderableHeaderNavCustomLink(link)) continue
+    links.push({
+      title: link.name,
+      href: link.url,
+      external: /^https?:\/\//i.test(link.url),
+    })
   }
 
   return links
