@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"maps"
 	"strconv"
 	"strings"
 
@@ -632,19 +631,16 @@ func HardDeleteUserById(id int) error {
 // creditAffQuota 在 aff_quota/aff_history 未越界时累加邀请额度。
 // 两列都是 INT 列，必须带条件更新：否则越界累加会在 MySQL/PostgreSQL 上报错，
 // 而 SQLite 会成功写入，导致三库行为不一致。
-func creditAffQuota(inviterId int, reward int, extraUpdates map[string]any) error {
+func creditAffQuota(inviterId int, reward int) error {
 	if inviterId == 0 || reward <= 0 {
 		return nil
 	}
-	updates := map[string]any{
-		"aff_quota":   gorm.Expr("aff_quota + ?", reward),
-		"aff_history": gorm.Expr("aff_history + ?", reward),
-	}
-	maps.Copy(updates, extraUpdates)
-
 	result := DB.Model(&User{}).
 		Where("id = ? AND aff_quota <= ? AND aff_history <= ?", inviterId, common.MaxAffQuotaReward-reward, common.MaxAffQuotaReward-reward).
-		Updates(updates)
+		Updates(map[string]any{
+			"aff_quota":   gorm.Expr("aff_quota + ?", reward),
+			"aff_history": gorm.Expr("aff_history + ?", reward),
+		})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -654,25 +650,37 @@ func creditAffQuota(inviterId int, reward int, extraUpdates map[string]any) erro
 	return nil
 }
 
-func inviteUser(inviterId int) error {
-	return creditAffQuota(inviterId, common.QuotaForInviter, map[string]any{
-		"aff_count": gorm.Expr("aff_count + ?", 1),
-	})
+// increaseAffCount 累加邀请人的成功邀请人数。邀请人数记录的是“有人使用该邀请码
+// 注册并通过防刷校验”这一事实，与邀请人奖励、被邀请人奖励、充值返佣是否配置
+// 都无关，因此必须独立于发奖累加：把它挂在邀请人注册奖励上，会让只开返佣或只送
+// 被邀请人奖励的部署永远显示 0 邀请。
+func increaseAffCount(inviterId int) error {
+	if inviterId == 0 {
+		return nil
+	}
+	return DB.Model(&User{}).
+		Where("id = ?", inviterId).
+		Update("aff_count", gorm.Expr("aff_count + ?", 1)).Error
 }
 
 // awardInviteRewards 在注册完成后发放邀请奖励。
 // 同一 (IP, 邀请人) 组合 24 小时内只发放一次，且该去重同时覆盖被邀请人奖励：
 // 只拦截邀请人奖励时，同一个人仍能反复用自己的邀请码注册小号刷取被邀请人奖励。
 // 代价是共享出口 IP（办公室/NAT）下 24 小时内的后续注册拿不到被邀请人奖励。
+// 返利功能只要启用任何一种奖励（注册奖励或充值返佣）就计入邀请人数，且计数与
+// 发奖结果无关：奖励未配置、额度已达上限都不影响“邀请人数”反映真实注册数。
 func awardInviteRewards(inviteeId int, inviterId int, clientIP string) {
 	if inviterId == 0 || !operation_setting.IsPaymentComplianceConfirmed() {
 		return
 	}
-	if common.QuotaForInvitee <= 0 && common.QuotaForInviter <= 0 {
+	if common.QuotaForInvitee <= 0 && common.QuotaForInviter <= 0 && common.AffCommissionRate <= 0 {
 		return
 	}
 	if clientIP != "" && !claimInviteRewardSlot(inviterId, clientIP) {
 		return
+	}
+	if err := increaseAffCount(inviterId); err != nil {
+		common.SysError(fmt.Sprintf("failed to count invite for inviter %d: %s", inviterId, err.Error()))
 	}
 	if common.QuotaForInvitee > 0 {
 		if err := IncreaseUserQuota(inviteeId, common.QuotaForInvitee, true); err != nil {
@@ -682,7 +690,7 @@ func awardInviteRewards(inviteeId int, inviterId int, clientIP string) {
 		}
 	}
 	if common.QuotaForInviter > 0 {
-		if err := inviteUser(inviterId); err != nil {
+		if err := creditAffQuota(inviterId, common.QuotaForInviter); err != nil {
 			common.SysError(fmt.Sprintf("failed to grant inviter reward to user %d: %s", inviterId, err.Error()))
 		} else {
 			RecordLog(inviterId, LogTypeSystem, fmt.Sprintf("邀请用户赠送 %s", logger.LogQuota(common.QuotaForInviter)))

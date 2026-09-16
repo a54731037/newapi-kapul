@@ -762,7 +762,7 @@ func CreditAffiliateCommission(userId int, topupQuota int) {
 	if commission <= 0 {
 		return
 	}
-	if err := creditAffQuota(topUpUser.InviterId, commission, nil); err != nil {
+	if err := creditAffQuota(topUpUser.InviterId, commission); err != nil {
 		common.SysError(fmt.Sprintf("failed to credit affiliate commission to inviter %d: %s", topUpUser.InviterId, err.Error()))
 		return
 	}

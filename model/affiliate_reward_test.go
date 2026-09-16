@@ -117,6 +117,42 @@ func TestAwardInviteRewardsRequiresPaymentCompliance(t *testing.T) {
 	assert.Zero(t, slots, "未确认合规时不应占用邀请奖励名额")
 }
 
+// 邀请人数记录的是邀请事实，必须与奖励配置和发奖结果解耦。挂在邀请人注册奖励上
+// 会让只送被邀请人奖励、或只开充值返佣的部署永远显示 0 邀请；邀请人额度撞上
+// INT 上限时发奖会失败，但邀请数仍应照常累加。
+func TestAwardInviteRewardsCountsInvitesRegardlessOfRewardConfig(t *testing.T) {
+	tests := []struct {
+		name         string
+		inviterQuota int
+		inviteeQuota int
+		rate         float64
+		atQuotaCap   bool
+	}{
+		{name: "只配置被邀请人奖励", inviteeQuota: 500},
+		{name: "只配置充值返佣", rate: 0.05},
+		{name: "邀请人额度已达上限", inviterQuota: 1000, atQuotaCap: true},
+	}
+	for i, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resetAffiliateTables(t)
+			useAffiliateConfigForTest(t, tc.inviterQuota, tc.inviteeQuota, tc.rate, true)
+
+			inviter := createAffiliateUser(t, fmt.Sprintf("count-inviter-%d", i), 0, 0)
+			if tc.atQuotaCap {
+				require.NoError(t, DB.Model(&User{}).Where("id = ?", inviter.Id).Updates(map[string]any{
+					"aff_quota":   common.MaxAffQuotaReward,
+					"aff_history": common.MaxAffQuotaReward,
+				}).Error)
+			}
+			invitee := createAffiliateUser(t, fmt.Sprintf("count-invitee-%d", i), inviter.Id, 0)
+
+			awardInviteRewards(invitee.Id, inviter.Id, "203.0.113.30")
+
+			assert.Equal(t, 1, reloadAffiliateUser(t, inviter.Id).AffCount)
+		})
+	}
+}
+
 // aff_quota/aff_history 是 INT 列，越界累加必须失败而不是依赖数据库报错或写入越界值。
 func TestCreditAffQuotaRefusesToOverflowIntColumn(t *testing.T) {
 	resetAffiliateTables(t)
@@ -127,7 +163,7 @@ func TestCreditAffQuotaRefusesToOverflowIntColumn(t *testing.T) {
 		"aff_history": common.MaxAffQuotaReward - 10,
 	}).Error)
 
-	require.Error(t, creditAffQuota(inviter.Id, 100, nil))
+	require.Error(t, creditAffQuota(inviter.Id, 100))
 	reloaded := reloadAffiliateUser(t, inviter.Id)
 	assert.Equal(t, common.MaxAffQuotaReward-10, reloaded.AffQuota)
 	assert.Equal(t, common.MaxAffQuotaReward-10, reloaded.AffHistoryQuota)
@@ -137,7 +173,7 @@ func TestCreditAffQuotaRefusesToOverflowIntColumn(t *testing.T) {
 		"aff_quota":   0,
 		"aff_history": 0,
 	}).Error)
-	require.NoError(t, creditAffQuota(inviter.Id, 100, nil))
+	require.NoError(t, creditAffQuota(inviter.Id, 100))
 	reloaded = reloadAffiliateUser(t, inviter.Id)
 	assert.Equal(t, 100, reloaded.AffQuota)
 	assert.Equal(t, 100, reloaded.AffHistoryQuota)
