@@ -37,6 +37,15 @@ type ReleaseInfo = {
   published_at?: string
 }
 
+/**
+ * Release feed this dashboard reports against. A build that publishes its own
+ * releases must point this at its own repository: the upstream feed would
+ * otherwise be shown as "new version available" for versions this build never
+ * contains.
+ */
+const RELEASE_FEED_URL =
+  'https://api.github.com/repos/a54731037/newapi-kapul/releases/latest'
+
 type UpdateCheckerSectionProps = {
   currentVersion?: string | null
   startTime?: number | null
@@ -57,15 +66,12 @@ export function UpdateCheckerSection({
   const handleCheckUpdates = async () => {
     setChecking(true)
     try {
-      const response = await fetch(
-        'https://api.github.com/repos/Calcium-Ion/new-api/releases/latest',
-        {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            'User-Agent': 'new-api-dashboard',
-          },
-        }
-      )
+      const response = await fetch(RELEASE_FEED_URL, {
+        headers: {
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'new-api-dashboard',
+        },
+      })
 
       if (!response.ok) {
         throw new Error(t('Failed to contact GitHub releases API'))
