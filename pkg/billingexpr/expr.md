@@ -198,6 +198,24 @@ Two factor shapes are accepted:
   with a literal argument. The value is converted to a multiplier at run time and
   traced as a `dynamic` rule carrying the value actually applied.
 
+#### Request probe values are compared as text
+
+An intermediate request probe compared against a literal — `==` or `!=` — is
+evaluated on the text form of both sides rather than on their types.
+
+The visual editor stores enumerated values as strings, because that is the only
+shape one literal can express: `(param("seconds") == "8" ? 8 : 1)`. A JSON body,
+however, carries the same value as a number. A typed comparison would be
+silently false for `{"seconds": 8}`, leave the multiplier at its neutral `1`, and
+undercharge the request by the whole enumerated factor. Comparing as text makes
+`{"seconds": 8}`, `{"seconds": "8"}`, the header `8`, and the frozen
+`param_facts` value `8` all select the same unit.
+
+A probe compared against another probe or against a computed value keeps the
+expression's own typed semantics, and the consume log always shows the condition
+exactly as written — instrumentation never rewrites the stored expression or the
+text an administrator sees.
+
 Dynamic factors are bounded. A value that is absent, empty, or `0` is neutral
 (`1`) so the documented API default for count and duration fields applies; a
 negative, non-finite, or non-numeric value fails the evaluation instead of

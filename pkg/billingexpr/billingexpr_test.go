@@ -386,9 +386,13 @@ func TestRequestProbeNonUnitFallbackIsNotTraced(t *testing.T) {
 }
 
 func TestRequestProbeInternalTraceFunctionIsReserved(t *testing.T) {
-	_, err := billingexpr.CompileFromCache(`_trace(0, true, 5.0)`)
+	for _, name := range []string{"_trace", "_trace_dyn", "_probe_eq", "_probe_ne"} {
+		t.Run(name, func(t *testing.T) {
+			_, err := billingexpr.CompileFromCache(name + `(0, true, 5.0)`)
 
-	require.ErrorContains(t, err, `identifier "_trace" is reserved for internal use`)
+			require.ErrorContains(t, err, `identifier "`+name+`" is reserved for internal use`)
+		})
+	}
 }
 
 func TestCeilFloor(t *testing.T) {

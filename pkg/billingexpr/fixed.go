@@ -45,7 +45,7 @@ func isRequestPriceMultiplier(node ast.Node) bool {
 // isDynamicRequestMultiplier reports whether node reads one bounded request
 // value (param/header/u with a literal argument) to scale a request price.
 func isDynamicRequestMultiplier(node ast.Node) bool {
-	return isDynamicRequestFactor(node)
+	return isRequestProbeRead(node)
 }
 
 // validateFixedPricingTree enforces one pricing leaf per execution. Without

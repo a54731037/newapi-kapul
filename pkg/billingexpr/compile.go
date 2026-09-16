@@ -25,6 +25,14 @@ const (
 	requestRuleTraceDynIntFunc  = "_trace_dyn_int"
 )
 
+// probeEqualFunction and probeNotEqualFunction compare a request probe value
+// with the literal it is written against as text, so a numeric JSON field
+// matches the numeric string the visual editor stores.
+const (
+	probeEqualFunction    = "_probe_eq"
+	probeNotEqualFunction = "_probe_ne"
+)
+
 // RequestPriceFunctionFixed and RequestPriceFunctionPerCall are interchangeable
 // names for a request-priced leaf. per_call is the price-list spelling;
 // fixed stays supported so existing expressions keep working.
@@ -60,7 +68,7 @@ type requestRulePatcher struct {
 
 func (p *requestRulePatcher) Visit(node *ast.Node) {
 	if identifier, ok := (*node).(*ast.IdentifierNode); ok {
-		if isReservedTraceIdentifier(identifier.Value) {
+		if isReservedInternalIdentifier(identifier.Value) {
 			p.restrictedIdentifier = identifier.Value
 		}
 		return
@@ -75,9 +83,10 @@ func (p *requestRulePatcher) Visit(node *ast.Node) {
 	}
 }
 
-func isReservedTraceIdentifier(name string) bool {
+func isReservedInternalIdentifier(name string) bool {
 	switch name {
-	case requestRuleTraceFunction, requestRuleTraceIntFunction, requestRuleTraceDynFunction:
+	case requestRuleTraceFunction, requestRuleTraceIntFunction, requestRuleTraceDynFunction,
+		probeEqualFunction, probeNotEqualFunction:
 		return true
 	default:
 		return false
@@ -128,9 +137,9 @@ func (p *requestRulePatcher) patchDynamicMultiplier(binary *ast.BinaryNode) {
 	}
 	var slot *ast.Node
 	switch {
-	case isDynamicRequestFactor(binary.Right) && containsPricingMarker(binary.Left):
+	case isRequestProbeRead(binary.Right) && containsPricingMarker(binary.Left):
 		slot = &binary.Right
-	case isDynamicRequestFactor(binary.Left) && containsPricingMarker(binary.Right):
+	case isRequestProbeRead(binary.Left) && containsPricingMarker(binary.Right):
 		slot = &binary.Left
 	default:
 		return
@@ -155,9 +164,10 @@ func (p *requestRulePatcher) patchDynamicMultiplier(binary *ast.BinaryNode) {
 	})
 }
 
-// isDynamicRequestFactor reports whether node reads one request value that can
-// serve as a multiplier: param/header/u with a single literal argument.
-func isDynamicRequestFactor(node ast.Node) bool {
+// isRequestProbeRead reports whether node reads exactly one request value that
+// can act on its own as a multiplier or a comparison operand: param/header/u
+// with a single literal argument.
+func isRequestProbeRead(node ast.Node) bool {
 	call, ok := node.(*ast.CallNode)
 	if !ok || len(call.Arguments) != 1 {
 		return false
@@ -173,6 +183,66 @@ func isDynamicRequestFactor(node ast.Node) bool {
 	}
 	_, ok = call.Arguments[0].(*ast.StringNode)
 	return ok
+}
+
+// probeComparisonPatcher rewrites `<request probe> == <literal>` and `!=` into a
+// text comparison. The visual editor stores enumerated request values as strings
+// (`param("seconds") == "6" ? 6 : 1`), while a JSON body carries the same value
+// as a number; a typed comparison is silently false, so the multiplier falls
+// back to 1 and the request is undercharged.
+//
+// It is a repeatable visitor so it runs after requestRulePatcher has recorded
+// the original condition text on the billing trace: the compiled program
+// compares tolerantly while the consume log still shows what the administrator
+// wrote.
+type probeComparisonPatcher struct{}
+
+func (p *probeComparisonPatcher) Reset() {}
+
+func (p *probeComparisonPatcher) ShouldRepeat() bool { return false }
+
+func (p *probeComparisonPatcher) Visit(node *ast.Node) {
+	binary, ok := (*node).(*ast.BinaryNode)
+	if !ok {
+		return
+	}
+	helper := probeEqualFunction
+	switch binary.Operator {
+	case "==":
+	case "!=":
+		helper = probeNotEqualFunction
+	default:
+		return
+	}
+
+	var probe, literal ast.Node
+	switch {
+	case isRequestProbeRead(binary.Left):
+		probe, literal = binary.Left, binary.Right
+	case isRequestProbeRead(binary.Right):
+		probe, literal = binary.Right, binary.Left
+	default:
+		return
+	}
+	// A probe compared against another probe or against a computed value keeps
+	// the expression's own typed semantics.
+	if !isComparisonLiteral(literal) {
+		return
+	}
+
+	ast.Patch(node, &ast.CallNode{
+		Callee:    &ast.IdentifierNode{Value: helper},
+		Arguments: []ast.Node{probe, literal},
+	})
+}
+
+func isComparisonLiteral(node ast.Node) bool {
+	switch node.(type) {
+	case *ast.StringNode, *ast.IntegerNode, *ast.FloatNode, *ast.BoolNode:
+		return true
+	default:
+		return false
+	}
 }
 
 func requestRuleNumber(node ast.Node) (float64, bool) {
@@ -234,6 +304,8 @@ var compileEnvPrototypeV1 = map[string]any{
 	"_trace":     func(int, bool, float64) float64 { return 1 },
 	"_trace_int": func(int, bool, int) int { return 1 },
 	"_trace_dyn": func(int, any) float64 { return 1 },
+	"_probe_eq":  func(any, any) bool { return false },
+	"_probe_ne":  func(any, any) bool { return false },
 	"header":     func(string) string { return "" },
 	"param":      func(string) any { return nil },
 	"u":          func(string) any { return nil },
@@ -302,7 +374,13 @@ func compileEntryFromCacheByHash(exprStr, hash string) (*cachedEntry, error) {
 		}
 	}
 	patcher := &requestRulePatcher{dynamicMultipliers: fixedPricing}
-	prog, err := expr.Compile(body, expr.Env(getCompileEnv(version)), expr.Patch(patcher), expr.AsFloat64())
+	prog, err := expr.Compile(
+		body,
+		expr.Env(getCompileEnv(version)),
+		expr.Patch(patcher),
+		expr.Patch(&probeComparisonPatcher{}),
+		expr.AsFloat64(),
+	)
 	if patcher.restrictedIdentifier != "" {
 		return nil, fmt.Errorf("expr compile error: identifier %q is reserved for internal use", patcher.restrictedIdentifier)
 	}
@@ -351,7 +429,7 @@ func extractUsedVars(prog *vm.Program) map[string]bool {
 	node := prog.Node()
 	ast.Find(node, func(n ast.Node) bool {
 		if id, ok := n.(*ast.IdentifierNode); ok {
-			if isReservedTraceIdentifier(id.Value) {
+			if isReservedInternalIdentifier(id.Value) {
 				return false
 			}
 			vars[id.Value] = true

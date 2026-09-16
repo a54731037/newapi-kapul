@@ -120,6 +120,12 @@ func runProgram(prog *vm.Program, requestRules []RequestRuleTrace, params TokenP
 		"header": func(key string) string {
 			return headers[strings.ToLower(strings.TrimSpace(key))]
 		},
+		probeEqualFunction: func(probe any, literal any) bool {
+			return probeComparableText(probe) == probeComparableText(literal)
+		},
+		probeNotEqualFunction: func(probe any, literal any) bool {
+			return probeComparableText(probe) != probeComparableText(literal)
+		},
 		"param": func(path string) any {
 			path = strings.TrimSpace(path)
 			if path == "" {
@@ -250,6 +256,26 @@ func requestValueAsFloat(value any) (float64, bool) {
 		return parsed, true
 	default:
 		return 0, false
+	}
+}
+
+// probeComparableText renders a request value as the text its literal is
+// written against, so a numeric JSON field matches the numeric string the
+// visual editor stores ("6") and a string field still matches its own text.
+func probeComparableText(value any) string {
+	switch typed := value.(type) {
+	case nil:
+		return ""
+	case string:
+		return typed
+	case bool:
+		return strconv.FormatBool(typed)
+	case float64:
+		return strconv.FormatFloat(typed, 'f', -1, 64)
+	case json.Number:
+		return typed.String()
+	default:
+		return fmt.Sprint(value)
 	}
 }
 

@@ -105,6 +105,88 @@ func TestDynamicRequestMultiplierBounds(t *testing.T) {
 	}
 }
 
+// A literal factor stores its enumerated values as strings, because the visual
+// editor generates `param("seconds") == "6" ? 6 : 1`. A JSON body carries the
+// same value as a number, so a typed comparison would be silently false, keep
+// the neutral 1 and undercharge the request. Every shape of the same value must
+// select the enumerated unit, and settlement must replay the frozen submission
+// fact identically.
+func TestLiteralUnitFactorComparesRequestValueText(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		expression string
+		cond       string
+		body       string
+		want       float64
+		matched    bool
+	}{
+		{
+			name:       "json number selects the unit",
+			expression: `(tier("per_second", per_call(0.12))) * (param("seconds") == "6" ? 6 : 1)`,
+			cond:       `param("seconds") == "6"`,
+			body:       `{"seconds":6}`,
+			want:       0.12 * 1_000_000 * 6,
+			matched:    true,
+		},
+		{
+			name:       "numeric string selects the unit",
+			expression: `(tier("per_second", per_call(0.12))) * (param("seconds") == "6" ? 6 : 1)`,
+			cond:       `param("seconds") == "6"`,
+			body:       `{"seconds":"6"}`,
+			want:       0.12 * 1_000_000 * 6,
+			matched:    true,
+		},
+		{
+			name:       "unlisted number keeps the neutral unit",
+			expression: `(tier("per_second", per_call(0.12))) * (param("seconds") == "6" ? 6 : 1)`,
+			cond:       `param("seconds") == "6"`,
+			body:       `{"seconds":8}`,
+			want:       0.12 * 1_000_000,
+		},
+		{
+			name:       "absent value keeps the neutral unit",
+			expression: `(tier("per_second", per_call(0.12))) * (param("seconds") == "6" ? 6 : 1)`,
+			cond:       `param("seconds") == "6"`,
+			body:       `{}`,
+			want:       0.12 * 1_000_000,
+		},
+		{
+			name:       "not-equal also compares request value text",
+			expression: `(tier("per_second", per_call(0.12))) * (param("seconds") != "6" ? 6 : 1)`,
+			cond:       `param("seconds") != "6"`,
+			body:       `{"seconds":8}`,
+			want:       0.12 * 1_000_000 * 6,
+			matched:    true,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			request := billingexpr.RequestInput{Body: []byte(tc.body)}
+			cost, trace, err := billingexpr.RunExprWithRequest(
+				tc.expression,
+				billingexpr.TokenParams{},
+				request,
+			)
+			require.NoError(t, err)
+			assert.InDelta(t, tc.want, cost, 1e-6)
+			assert.Equal(t, "per_second", trace.MatchedTier)
+			// The consume log still shows the condition the administrator wrote.
+			assert.Equal(t, []billingexpr.RequestRuleTrace{
+				{Cond: tc.cond, Multiplier: 6, Matched: tc.matched},
+			}, trace.RequestRules)
+
+			// Settlement replays the frozen submission facts, which carry the raw
+			// JSON value instead of the request body.
+			settled, _, err := billingexpr.RunExprWithRequest(
+				tc.expression,
+				billingexpr.TokenParams{},
+				billingexpr.RequestInput{Params: billingexpr.FreezeParamFacts(tc.expression, request)},
+			)
+			require.NoError(t, err)
+			assert.InDelta(t, cost, settled, 1e-9)
+		})
+	}
+}
+
 // Task settlement runs after submission, so the request-probe values an
 // expression reads must be frozen on the snapshot instead of re-read from a body
 // that no longer exists.
