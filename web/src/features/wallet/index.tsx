@@ -138,7 +138,8 @@ export function Wallet(props: WalletProps) {
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
+    return () =>
+      document.removeEventListener('visibilitychange', handleVisibility)
   }, [fetchUser])
 
   useEffect(() => {
@@ -306,9 +307,6 @@ export function Wallet(props: WalletProps) {
               user={user}
               affiliateLink={affiliateLink}
               onTransfer={() => setTransferDialogOpen(true)}
-              complianceConfirmed={
-                topupInfo?.payment_compliance_confirmed !== false
-              }
               loading={affiliateLoading}
               commissionRate={commissionRate}
             />

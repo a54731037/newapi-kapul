@@ -4235,6 +4235,56 @@ export function ChannelMutateDrawer({
 
                               <FormField
                                 control={form.control}
+                                name='capability_image'
+                                render={({ field }) => (
+                                  <FormItem className='flex items-center justify-between px-4 py-3'>
+                                    <div className='space-y-0.5'>
+                                      <FormLabel>
+                                        {t('Image generation channel')}
+                                      </FormLabel>
+                                      <FormDescription>
+                                        {t(
+                                          'Marks this channel as serving image generation, so its models appear as an image capability to API keys in the same group'
+                                        )}
+                                      </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                      <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
+                                name='capability_video'
+                                render={({ field }) => (
+                                  <FormItem className='flex items-center justify-between px-4 py-3'>
+                                    <div className='space-y-0.5'>
+                                      <FormLabel>
+                                        {t('Video channel')}
+                                      </FormLabel>
+                                      <FormDescription>
+                                        {t(
+                                          'Marks this channel as serving video generation, so its models appear as a video capability to API keys in the same group'
+                                        )}
+                                      </FormDescription>
+                                    </div>
+                                    <FormControl>
+                                      <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
                                 name='pass_through_body_enabled'
                                 render={({ field }) => (
                                   <FormItem className='flex items-center justify-between px-4 py-3'>

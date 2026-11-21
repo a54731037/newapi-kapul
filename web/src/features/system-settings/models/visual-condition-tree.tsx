@@ -308,8 +308,7 @@ function ConditionFields(props: ConditionProps) {
                     ...node,
                     valueKind,
                     value: valueKind === 'nil' ? '' : node.value,
-                    operator:
-                      valueKind === 'number' ? node.operator : equality,
+                    operator: valueKind === 'number' ? node.operator : equality,
                   })
                 }}
               />

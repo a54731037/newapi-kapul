@@ -118,3 +118,24 @@ it('shows localized enum choices while preserving raw values in generated billin
   expect(expression).toContain('tier("lyrics"')
   expect(expression).not.toContain('Generate lyrics')
 })
+
+it('inserts the compact per-second template into the raw expression', async () => {
+  const onBillingExprChange = vi.fn()
+  const user = userEvent.setup()
+  render(
+    <TaskUsagePricingEditor
+      billingExpr='param("resolution") == "1080p" ? tier("hd", u("seconds") * 0.4) : tier("sd", u("seconds") * 0.2)'
+      requestRuleExpr=''
+      usageSchema={{
+        seconds: { type: 'number', unit: 'second' },
+      }}
+      onBillingExprChange={onBillingExprChange}
+      onRequestRuleExprChange={vi.fn()}
+    />
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Per second template' }))
+  expect(onBillingExprChange.mock.lastCall?.[0]).toBe(
+    'tier("per_second", u("seconds") * 0.08)'
+  )
+})

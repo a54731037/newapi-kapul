@@ -484,10 +484,17 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 	user.Role = common.RoleCommonUser
 	user.Status = common.UserStatusEnabled
 
-	// Handle affiliate code
+	// Handle affiliate code. An unknown code cannot be corrected inside the
+	// OAuth flow, so the sign-up succeeds without an inviter; the drop is logged
+	// instead of being silent.
 	inviterId := 0
 	if affiliateCode != "" {
-		inviterId, _ = model.GetUserIdByAffCode(affiliateCode)
+		resolvedInviterId, err := model.GetUserIdByAffCode(affiliateCode)
+		if err != nil {
+			common.SysLog(fmt.Sprintf("oauth sign-up ignored unusable affiliate code %q: %v", affiliateCode, err))
+		} else {
+			inviterId = resolvedInviterId
+		}
 	}
 	user.AffiliateClientIP = c.ClientIP()
 

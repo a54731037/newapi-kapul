@@ -32,14 +32,16 @@ export function EmptyState(props: EmptyStateProps) {
   const hasSearch = Boolean(props.searchQuery?.trim())
 
   return (
-    <div className='flex min-h-[320px] flex-col items-center justify-center rounded-lg border border-dashed px-6 py-12 text-center'>
-      <Search className='text-muted-foreground/40 mb-3 size-10' />
+    <div className='border-border/70 bg-muted/20 flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed px-6 py-12 text-center'>
+      <span className='bg-muted text-muted-foreground mb-4 flex size-11 items-center justify-center rounded-full'>
+        <Search className='size-5' aria-hidden='true' />
+      </span>
 
-      <h3 className='text-foreground mb-1 text-base font-semibold'>
+      <h3 className='text-foreground mb-1 text-[15px] font-semibold tracking-tight'>
         {t('No models found')}
       </h3>
 
-      <p className='text-muted-foreground mb-5 max-w-xs text-sm'>
+      <p className='text-muted-foreground mb-5 max-w-sm text-[13px] leading-relaxed'>
         {hasSearch
           ? t(
               'No results for "{{query}}". Try adjusting your search or filters.',

@@ -184,6 +184,11 @@ export type ContentSettings = {
   DataExportInterval: number
   Chats: string
   DrawingEnabled: boolean
+  StudioEnabled: boolean
+  StudioImageEnabled: boolean
+  StudioCanvasEnabled: boolean
+  StudioVideoEnabled: boolean
+  StudioAudioEnabled: boolean
   MjNotifyEnabled: boolean
   MjAccountFilterEnabled: boolean
   MjForwardUrlEnabled: boolean

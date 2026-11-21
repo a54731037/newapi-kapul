@@ -18,6 +18,11 @@ type ChannelSettings struct {
 	PassThroughBodyEnabled bool   `json:"pass_through_body_enabled,omitempty"`
 	SystemPrompt           string `json:"system_prompt,omitempty"`
 	SystemPromptOverride   bool   `json:"system_prompt_override,omitempty"`
+	// Capabilities declares the creative surfaces this channel serves
+	// ("image", "video"). The pricing list advertises the matching relay
+	// endpoint for every model of the channel, which is what the creative
+	// studio reads to decide whether a key can generate images or videos.
+	Capabilities []string `json:"capabilities,omitempty"`
 	// HTTPProtocol controls outbound HTTP version negotiation for this channel.
 	// Accepted values: "", "auto" (default), "http1".
 	HTTPProtocol string `json:"http_protocol,omitempty"`
@@ -30,6 +35,12 @@ const (
 	HTTPProtocolAuto         = "auto"
 	HTTPProtocolHTTP1        = "http1"
 	MaxHTTP2ConnectionShards = 8
+)
+
+// Channel capability markers an administrator can attach to a channel.
+const (
+	ChannelCapabilityImage = "image"
+	ChannelCapabilityVideo = "video"
 )
 
 // ValidateHTTPTransport validates save-time HTTP transport channel settings.

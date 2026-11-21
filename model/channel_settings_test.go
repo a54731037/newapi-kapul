@@ -98,3 +98,16 @@ func TestAdvancedCustomChannelRequiresModelListRouteOnlyWhenUpdateChecksEnabled(
 		})
 	}
 }
+
+func TestChannelValidateSettingsChecksCreativeCapabilities(t *testing.T) {
+	channel := &Channel{}
+	channel.SetSetting(dto.ChannelSettings{
+		Capabilities: []string{dto.ChannelCapabilityImage, dto.ChannelCapabilityVideo},
+	})
+	require.NoError(t, channel.ValidateSettings())
+
+	channel.SetSetting(dto.ChannelSettings{Capabilities: []string{"audio"}})
+	err := channel.ValidateSettings()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "audio")
+}

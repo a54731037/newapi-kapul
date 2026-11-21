@@ -18,7 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createContext, useContext } from 'react'
 
-import { BILLING_PRICING_VARS, splitBillingExprAndRequestRules } from '@/features/pricing/lib/billing-expr'
+import {
+  BILLING_PRICING_VARS,
+  splitBillingExprAndRequestRules,
+} from '@/features/pricing/lib/billing-expr'
 import {
   isTierRequestConditionVar,
   tryParseVisualConfig,
@@ -33,6 +36,56 @@ import {
   MODELS_DEV_PRESET_NAME,
 } from './constants'
 import { formatPricingNumber } from './pricing-format'
+
+/**
+ * A price source the administrator pasted in themselves (for example a
+ * LiteLLM `model_prices_and_context_window.json` mirror). Sources are kept in
+ * the browser and sent with every sync request.
+ */
+export type CustomPriceSource = { id: string; name: string; url: string }
+
+export const CUSTOM_PRICE_SOURCES_STORAGE_KEY = 'upstream-price-custom-sources'
+
+export function readCustomPriceSources(): CustomPriceSource[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_PRICE_SOURCES_STORAGE_KEY)
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.flatMap((item) => {
+      if (!item || typeof item !== 'object') return []
+      const source = item as Partial<CustomPriceSource>
+      if (typeof source.name !== 'string' || typeof source.url !== 'string') {
+        return []
+      }
+      return [
+        { id: source.id ?? source.url, name: source.name, url: source.url },
+      ]
+    })
+  } catch {
+    return []
+  }
+}
+
+export function writeCustomPriceSources(sources: CustomPriceSource[]) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(
+    CUSTOM_PRICE_SOURCES_STORAGE_KEY,
+    JSON.stringify(sources)
+  )
+}
+
+/** Splits a custom URL into the base URL the sync API expects plus its endpoint. */
+export function customSourceUpstream(source: CustomPriceSource) {
+  const parsed = new URL(source.url.trim())
+  return {
+    id: 0,
+    name: source.name.trim() || parsed.hostname,
+    base_url: parsed.origin,
+    endpoint: parsed.toString(),
+  }
+}
 
 export type PricingSourceSelection = { model: string; source: string }
 export type PricingSourceSelections = Record<string, string>
@@ -131,8 +184,12 @@ export function getSyncPriceLines(
   return lines
 }
 
-export function getSyncExpressionPricing(expression: string, t: (key: string) => string) {
-  const { billingExpr, requestRuleExpr } = splitBillingExprAndRequestRules(expression)
+export function getSyncExpressionPricing(
+  expression: string,
+  t: (key: string) => string
+) {
+  const { billingExpr, requestRuleExpr } =
+    splitBillingExprAndRequestRules(expression)
   const config = tryParseVisualConfig(billingExpr)
   if (!config) return null
   // Do not turn malformed or overflowing upstream numbers into free prices.
@@ -140,8 +197,9 @@ export function getSyncExpressionPricing(expression: string, t: (key: string) =>
   for (const match of body.matchAll(/\*\s*([+\-\d.eE]+)/g)) {
     if (!Number.isFinite(Number(match[1])) || Number(match[1]) < 0) return null
   }
-  const fields = BILLING_PRICING_VARS.filter((field) =>
-    field.tierField && new RegExp(`\\b${field.key}\\s*\\*`).test(body)
+  const fields = BILLING_PRICING_VARS.filter(
+    (field) =>
+      field.tierField && new RegExp(`\\b${field.key}\\s*\\*`).test(body)
   )
   const tokenLabels: Record<'p' | 'c' | 'len', string> = {
     p: t('Input tokens'),
@@ -157,7 +215,8 @@ export function getSyncExpressionPricing(expression: string, t: (key: string) =>
     const valueKind = condition.valueKind ?? 'number'
     let value: string
     if (valueKind === 'nil') value = 'nil'
-    else if (valueKind === 'string') value = JSON.stringify(String(condition.value ?? ''))
+    else if (valueKind === 'string')
+      value = JSON.stringify(String(condition.value ?? ''))
     else value = String(condition.value)
     return `${condition.var}(${JSON.stringify(condition.key ?? '')}) ${condition.op} ${value}`
   }
@@ -165,9 +224,7 @@ export function getSyncExpressionPricing(expression: string, t: (key: string) =>
     requestRuleExpr,
     tiers: config.tiers.map((tier) => ({
       label: tier.label,
-      condition: tier.conditions
-        .map(describeCondition)
-        .join(' ∧ '),
+      condition: tier.conditions.map(describeCondition).join(' ∧ '),
       lines: fields.map((field) => ({
         label: t(field.shortLabel),
         value: `$${formatPricingNumber(Number(tier[field.tierField ?? '']))}`,
@@ -188,10 +245,14 @@ export function describeSyncPrice(
         t('Expression pricing'),
         `USD / ${t('1M token')}`,
         ...parsed.tiers.flatMap((tier) => [
-          ...(parsed.tiers.length > 1 ? [tier.condition || tier.label || t('Default')] : []),
+          ...(parsed.tiers.length > 1
+            ? [tier.condition || tier.label || t('Default')]
+            : []),
           ...tier.lines.map((line) => `${line.label}: ${line.value}`),
         ]),
-        ...(parsed.requestRuleExpr ? [`${t('Includes request rules')}: ${parsed.requestRuleExpr}`] : []),
+        ...(parsed.requestRuleExpr
+          ? [`${t('Includes request rules')}: ${parsed.requestRuleExpr}`]
+          : []),
       ].join('\n')
     }
     return `${t('Expression pricing')}\n${values.billing_expr}`

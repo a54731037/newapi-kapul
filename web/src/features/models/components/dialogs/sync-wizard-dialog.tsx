@@ -75,6 +75,25 @@ const STEPS = [
 ]
 const PAGE_SIZE = 20
 
+/** Stable bulk-action order; affects how the field chips read. */
+const FIELD_ORDER: MetadataSyncField[] = [
+  'description',
+  'icon',
+  'tags',
+  'vendor',
+  'endpoints',
+  'name_rule',
+  'status',
+]
+
+/** Pure metadata fields, safe to apply to every selected model at once. */
+const METADATA_FIELDS: MetadataSyncField[] = [
+  'description',
+  'icon',
+  'tags',
+  'vendor',
+]
+
 function isMetadataSyncable(item: MetadataSyncCandidate) {
   return item.kind === 'create' || item.kind === 'update'
 }
@@ -257,9 +276,57 @@ export function SyncWizardDialog(props: {
     setSelection((previous) => ({
       ...previous,
       [name]: checked
-        ? [...previous[name], field]
+        ? [...new Set([...previous[name], field])]
         : previous[name].filter((value) => value !== field),
     }))
+
+  // Bulk field application: selecting many existing models used to require one
+  // checkbox per model per field. These helpers apply a field (or a field set)
+  // to every selected model that actually offers it.
+  const updateModels = selected.filter((item) => item.kind === 'update')
+
+  const applyFieldsToSelected = (fields: MetadataSyncField[]) => {
+    if (updateModels.length === 0) return
+    setSelection((previous) => {
+      const next = { ...previous }
+      for (const item of updateModels) {
+        const available = new Set(item.fields.map((field) => field.field))
+        const chosen = fields.filter((field) => available.has(field))
+        next[item.model_name] = [
+          ...new Set([...previous[item.model_name], ...chosen]),
+        ]
+      }
+      return next
+    })
+  }
+
+  const clearFieldsForSelected = () => {
+    if (updateModels.length === 0) return
+    setSelection((previous) => {
+      const next = { ...previous }
+      for (const item of updateModels) next[item.model_name] = []
+      return next
+    })
+  }
+
+  const toggleFieldForSelected = (field: MetadataSyncField) => {
+    const targets = updateModels.filter((item) =>
+      item.fields.some((candidate) => candidate.field === field)
+    )
+    if (targets.length === 0) return
+    const allChosen = targets.every((item) =>
+      selection[item.model_name].includes(field)
+    )
+    setSelection((previous) => {
+      const next = { ...previous }
+      for (const item of targets) {
+        next[item.model_name] = allChosen
+          ? previous[item.model_name].filter((value) => value !== field)
+          : [...new Set([...previous[item.model_name], field])]
+      }
+      return next
+    })
+  }
   const impact = (field: MetadataSyncField) => {
     if (field === 'name_rule') {
       return t(
@@ -640,6 +707,72 @@ export function SyncWizardDialog(props: {
               'New records include the fields below. Existing fields are kept unless explicitly selected.'
             )}
           </p>
+          {updateModels.length > 0 && (
+            <div className='border-border/70 space-y-3 rounded-lg border p-3'>
+              <div className='flex flex-wrap items-center justify-between gap-2'>
+                <div className='min-w-0'>
+                  <p className='text-[13px] font-medium'>
+                    {t('Batch set fields')}
+                  </p>
+                  <p className='text-muted-foreground text-xs'>
+                    {t(
+                      'Applies to all {{count}} selected existing models. Fields a model does not offer are skipped.',
+                      { count: updateModels.length }
+                    )}
+                  </p>
+                </div>
+                <div className='flex flex-wrap gap-2'>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => applyFieldsToSelected(METADATA_FIELDS)}
+                  >
+                    {t('Select metadata fields')}
+                  </Button>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => applyFieldsToSelected(FIELD_ORDER)}
+                  >
+                    {t('Select all fields')}
+                  </Button>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    onClick={clearFieldsForSelected}
+                  >
+                    {t('Clear fields')}
+                  </Button>
+                </div>
+              </div>
+              <div className='flex flex-wrap gap-2'>
+                {FIELD_ORDER.map((field) => {
+                  const targets = updateModels.filter((item) =>
+                    item.fields.some((candidate) => candidate.field === field)
+                  )
+                  if (targets.length === 0) return null
+                  const chosen = targets.filter((item) =>
+                    selection[item.model_name].includes(field)
+                  ).length
+                  return (
+                    <Button
+                      key={field}
+                      size='sm'
+                      variant={
+                        chosen === targets.length ? 'default' : 'outline'
+                      }
+                      onClick={() => toggleFieldForSelected(field)}
+                    >
+                      {t(FIELD_LABELS[field])}
+                      <span className='text-xs tabular-nums opacity-70'>
+                        {chosen}/{targets.length}
+                      </span>
+                    </Button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
           {selected.map((item) => (
             <section key={item.model_name} className='space-y-2'>
               <h3 className='font-mono text-sm font-semibold break-all'>

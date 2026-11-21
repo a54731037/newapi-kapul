@@ -269,15 +269,23 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserExists)
 		return
 	}
-	affCode := user.AffCode // this code is the inviter's code, not the user's own code
-	inviterId, err := model.GetUserIdByAffCode(affCode)
-	if affCode != "" && errors.Is(err, model.ErrAffCodeNotFound) {
-		common.ApiErrorI18n(c, i18n.MsgUserInviteCodeInvalid)
-		return
-	}
-	if err != nil && !errors.Is(err, model.ErrAffCodeNotFound) {
-		// system error — log but allow registration
-		logger.LogError(c, fmt.Sprintf("GetUserIdByAffCode error: %v", err))
+	// An unset invite code is normal registration, not a lookup failure: only a
+	// non-empty code can be invalid, and only that case rejects the request.
+	affCode := strings.TrimSpace(user.AffCode) // this code is the inviter's code, not the user's own code
+	inviterId := 0
+	if affCode != "" {
+		resolvedInviterId, err := model.GetUserIdByAffCode(affCode)
+		switch {
+		case err == nil:
+			inviterId = resolvedInviterId
+		case errors.Is(err, model.ErrAffCodeNotFound):
+			common.ApiErrorI18nWithCode(c, i18n.MsgUserInviteCodeInvalid)
+			return
+		default:
+			// A storage failure must not block registration; the user registers
+			// without an inviter and the failure stays visible in the error log.
+			logger.LogError(c, fmt.Sprintf("GetUserIdByAffCode error: %v", err))
+		}
 	}
 	cleanUser := model.User{
 		Username:          user.Username,

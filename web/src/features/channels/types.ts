@@ -79,6 +79,9 @@ export type Channel = z.infer<typeof channelSchema>
 // Channel Settings Types
 // ============================================================================
 
+/** Creative surfaces a channel declares through its settings. */
+export type ChannelCapability = 'image' | 'video'
+
 export interface ChannelSettings {
   task_plugin_key?: string
   force_format?: boolean
@@ -87,6 +90,7 @@ export interface ChannelSettings {
   pass_through_body_enabled?: boolean
   system_prompt?: string
   system_prompt_override?: boolean
+  capabilities?: ChannelCapability[]
   http_protocol?: 'auto' | 'http1' | string
   http2_connection_shards?: number
 }

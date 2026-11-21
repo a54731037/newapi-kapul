@@ -890,4 +890,22 @@ describe('flat tier conditions with request fields', () => {
       'tier("per_second", per_call(0.05)) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "8" ? 8 : 1) * (param("seconds") == "15" ? 15 : 1)'
     )
   })
+
+  test('scales the whole conditional tree when a request factor is added', () => {
+    // `a ? b : c * param("n")` scales only the else branch, so a branch tree
+    // must be parenthesized before the factor is appended.
+    const source =
+      '(param("resolution") == "1k" ? tier("1k", per_call(0.03)) : tier("4k", per_call(0.10))) * param("n")'
+    const document = parseVisualBillingDocument(source)
+    assert(document)
+    expect(document.root.kind).toBe('branch')
+    const serialized = serializeVisualBillingDocument(document)
+    assert(serialized.ok)
+    const result = evaluateBillingExpression(serialized.source, {
+      request: { body: { resolution: '1k', n: 3 } },
+    })
+    assert(result.status === 'success')
+    // Three 1k images, not a single unscaled 1k image.
+    expect(result.cost).toBeCloseTo(0.03 * 1_000_000 * 3, 6)
+  })
 })

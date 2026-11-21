@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ColumnDef, RowSelectionState } from '@tanstack/react-table'
-import { Search } from 'lucide-react'
+import { Plus, Search, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -49,7 +49,10 @@ import {
   MODELS_DEV_PRESET_ID,
   OFFICIAL_CHANNEL_ID,
 } from './constants'
-import { getUpstreamDisplayName } from './upstream-ratio-sync-helpers'
+import {
+  getUpstreamDisplayName,
+  type CustomPriceSource,
+} from './upstream-ratio-sync-helpers'
 
 type ChannelSelectorDialogProps = {
   open: boolean
@@ -59,7 +62,9 @@ type ChannelSelectorDialogProps = {
   onSelectedChannelIdsChange: (ids: number[]) => void
   channelEndpoints: Record<number, string>
   onChannelEndpointsChange: (endpoints: Record<number, string>) => void
-  onConfirm: (selectedIds: number[]) => void
+  customSources: CustomPriceSource[]
+  onCustomSourcesChange: (sources: CustomPriceSource[]) => void
+  onConfirm: (selectedIds: number[], customSources: CustomPriceSource[]) => void
 }
 
 // Synthesized presets from `controller/ratio_sync.go` always carry stable
@@ -78,6 +83,8 @@ export function ChannelSelectorDialog({
   onSelectedChannelIdsChange,
   channelEndpoints,
   onChannelEndpointsChange,
+  customSources,
+  onCustomSourcesChange,
   onConfirm,
 }: ChannelSelectorDialogProps) {
   const { t } = useTranslation()
@@ -317,7 +324,19 @@ export function ChannelSelectorDialog({
     const selectedIds = selectedRows.map((row) => row.original.id)
     onSelectedChannelIdsChange(selectedIds)
     onOpenChange(false)
-    onConfirm(selectedIds)
+    onConfirm(selectedIds, customSources)
+  }
+
+  const updateCustomSource = (
+    id: string,
+    field: 'name' | 'url',
+    value: string
+  ) => {
+    onCustomSourcesChange(
+      customSources.map((source) =>
+        source.id === id ? { ...source, [field]: value } : source
+      )
+    )
   }
 
   return (
@@ -348,6 +367,77 @@ export function ChannelSelectorDialog({
               className='ps-9'
             />
           </div>
+        </div>
+
+        <div className='border-border/70 shrink-0 space-y-2 rounded-lg border p-3'>
+          <div className='flex items-center justify-between gap-2'>
+            <div className='min-w-0'>
+              <p className='text-[13px] font-medium'>
+                {t('Custom price sources')}
+              </p>
+              <p className='text-muted-foreground text-[11px]'>
+                {t(
+                  'Any JSON price table, for example a LiteLLM model_prices_and_context_window.json mirror'
+                )}
+              </p>
+            </div>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                const id =
+                  globalThis.crypto?.randomUUID?.() ??
+                  `custom-${Date.now()}-${customSources.length}`
+                onCustomSourcesChange([
+                  ...customSources,
+                  { id, name: '', url: '' },
+                ])
+              }}
+            >
+              <Plus className='mr-1 size-3.5' aria-hidden='true' />
+              {t('Add source')}
+            </Button>
+          </div>
+          {customSources.length === 0 ? (
+            <p className='text-muted-foreground text-[11px]'>
+              {t('No custom sources yet.')}
+            </p>
+          ) : (
+            <div className='flex flex-col gap-2'>
+              {customSources.map((source) => (
+                <div key={source.id} className='flex items-center gap-2'>
+                  <Input
+                    value={source.name}
+                    onChange={(event) =>
+                      updateCustomSource(source.id, 'name', event.target.value)
+                    }
+                    placeholder={t('Display name')}
+                    className='h-8 w-40'
+                  />
+                  <Input
+                    value={source.url}
+                    onChange={(event) =>
+                      updateCustomSource(source.id, 'url', event.target.value)
+                    }
+                    placeholder='https://cdn.jsdelivr.net/gh/BerriAI/litellm@main/model_prices_and_context_window.json'
+                    className='h-8 min-w-0 flex-1 font-mono text-xs'
+                  />
+                  <Button
+                    variant='ghost'
+                    size='icon-sm'
+                    aria-label={t('Remove source')}
+                    onClick={() =>
+                      onCustomSourcesChange(
+                        customSources.filter((item) => item.id !== source.id)
+                      )
+                    }
+                  >
+                    <Trash2 className='size-3.5' aria-hidden='true' />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <DataTableView

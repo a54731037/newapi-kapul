@@ -36,24 +36,51 @@ const (
 const HighestResolutionTier = ImageResolution4K
 
 // NormalizeImageResolution maps a request's declared resolution and/or size to
-// one of the 1k/2k/4k tiers. An explicit resolution wins; otherwise the longer
-// edge of the size decides. Unparseable input returns HighestResolutionTier so
+// one of the 1k/2k/4k tiers. When both are present the higher tier wins: the
+// declared label is client input, so `{"size":"4096x4096","resolution":"1k"}`
+// must not be billed as 1k. Unparseable input returns HighestResolutionTier so
 // an unknown request is never undercharged.
 func NormalizeImageResolution(declaredResolution string, size string) string {
-	if tier, ok := normalizeDeclaredResolution(declaredResolution); ok {
-		return tier
+	declaredTier, declaredOK := normalizeDeclaredResolution(declaredResolution)
+	sizeTier, sizeOK := resolutionFromSize(size)
+	if declaredOK && sizeOK && imageResolutionRank(sizeTier) > imageResolutionRank(declaredTier) {
+		return sizeTier
 	}
-	if longEdge, ok := parseSizeLongEdge(size); ok {
-		switch {
-		case longEdge >= imageResolution4KMinLongEdge:
-			return ImageResolution4K
-		case longEdge >= imageResolution2KMinLongEdge:
-			return ImageResolution2K
-		default:
-			return ImageResolution1K
-		}
+	if declaredOK {
+		return declaredTier
+	}
+	if sizeOK {
+		return sizeTier
 	}
 	return HighestResolutionTier
+}
+
+// imageResolutionRank orders the tiers so the higher one can win a conflict.
+func imageResolutionRank(tier string) int {
+	switch tier {
+	case ImageResolution4K:
+		return 3
+	case ImageResolution2K:
+		return 2
+	default:
+		return 1
+	}
+}
+
+// resolutionFromSize maps the longer edge of a size string onto a tier.
+func resolutionFromSize(size string) (string, bool) {
+	longEdge, ok := parseSizeLongEdge(size)
+	if !ok {
+		return "", false
+	}
+	switch {
+	case longEdge >= imageResolution4KMinLongEdge:
+		return ImageResolution4K, true
+	case longEdge >= imageResolution2KMinLongEdge:
+		return ImageResolution2K, true
+	default:
+		return ImageResolution1K, true
+	}
 }
 
 // normalizeDeclaredResolution accepts the provider spellings of an explicit

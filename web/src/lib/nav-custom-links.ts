@@ -61,6 +61,13 @@ export function validateHeaderNavCustomLinkUrl(raw: string): string | null {
     return null
   }
 
+  // The scheme prefix is required literally: WHATWG normalizes
+  // `https:/example.com` into a valid URL, while the Go validator sees no host
+  // and rejects it. Requiring `://` keeps both sides in agreement.
+  if (!/^https?:\/\//i.test(raw)) {
+    return 'Link must start with / or use http(s)'
+  }
+
   let parsed: URL
   try {
     parsed = new URL(raw)

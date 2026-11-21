@@ -329,6 +329,38 @@ func getCompileEnv(version int) map[string]any {
 	}
 }
 
+// tokenVariables are the numeric identifiers an expression may read. They are
+// listed on their own so an unknown-name error can name the supported set
+// without mixing in function names.
+var tokenVariables = []string{"p", "c", "len", "cr", "cc", "cc1h", "img", "img_o", "ai", "ao"}
+
+// validateIdentifiers rejects a name the runtime environment cannot resolve.
+// The runtime environment is a map, so an unknown identifier would otherwise
+// compile and then evaluate to nil, surfacing as a confusing
+// "invalid operation: <nil> * int" far away from the typo.
+func validateIdentifiers(node ast.Node, env map[string]any) error {
+	unknown := ""
+	ast.Find(node, func(part ast.Node) bool {
+		identifier, ok := part.(*ast.IdentifierNode)
+		if !ok {
+			return false
+		}
+		if _, declared := env[identifier.Value]; declared {
+			return false
+		}
+		unknown = identifier.Value
+		return true
+	})
+	if unknown == "" {
+		return nil
+	}
+	return fmt.Errorf(
+		"unknown variable %q; variables are %s",
+		unknown,
+		strings.Join(tokenVariables, ", "),
+	)
+}
+
 // CompileFromCache compiles an expression string, using a cached program when
 // available. The cache is keyed by the SHA-256 hex digest of the expression.
 func CompileFromCache(exprStr string) (*vm.Program, error) {
@@ -362,6 +394,9 @@ func compileEntryFromCacheByHash(exprStr, hash string) (*cachedEntry, error) {
 	// bypass validation or a host's unsupported-protocol checks.
 	tree, err := parser.Parse(body)
 	if err != nil {
+		return nil, fmt.Errorf("expr compile error: %w", err)
+	}
+	if err := validateIdentifiers(tree.Node, getCompileEnv(version)); err != nil {
 		return nil, fmt.Errorf("expr compile error: %w", err)
 	}
 	fixedPricing := ast.Find(tree.Node, func(node ast.Node) bool {

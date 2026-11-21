@@ -32,7 +32,7 @@ func TestNormalizeImageResolutionTiers(t *testing.T) {
 		{name: "portrait 2160×3840 fullwidth", size: "2160×3840", want: ImageResolution4K},
 		{name: "square 4096", size: "4096x4096", want: ImageResolution4K},
 		{name: "landscape 3840x2160", size: "3840x2160", want: ImageResolution4K},
-		{name: "explicit 1k wins over size", declared: "1k", size: "4096x4096", want: ImageResolution1K},
+		{name: "larger size wins over a lower declared tier", declared: "1k", size: "4096x4096", want: ImageResolution4K},
 		{name: "explicit 4k wins over size", declared: "4k", size: "1024x1024", want: ImageResolution4K},
 		{name: "explicit resolution is case insensitive", declared: " 4K ", want: ImageResolution4K},
 		{name: "provider 1080p maps to 1k", declared: "1080p", want: ImageResolution1K},
@@ -64,12 +64,13 @@ func TestApplyImageResolutionToBillingInput(t *testing.T) {
 	})
 	assert.Equal(t, ImageResolution1K, square.Params["resolution"])
 
-	// The derived tier overrides a raw body value for param() lookups.
+	// The derived tier overrides a raw body value for param() lookups, and a
+	// lower declared label cannot undercut the size the request asks for.
 	overridden := ApplyImageResolutionToBillingInput(billingexpr.RequestInput{
 		Body:   []byte(`{"resolution":"1k","size":"3840x2160"}`),
 		Params: map[string]any{"resolution": "1k"},
 	})
-	assert.Equal(t, ImageResolution1K, overridden.Params["resolution"])
+	assert.Equal(t, ImageResolution4K, overridden.Params["resolution"])
 
 	// Full-width separators and a missing size both resolve deterministically.
 	assert.Equal(t,

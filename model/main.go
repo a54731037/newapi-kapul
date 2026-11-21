@@ -351,6 +351,7 @@ func migrateDB() error {
 		&TopUp{},
 		&QuotaData{},
 		&Task{},
+		&ImageJob{},
 		&TaskPlugin{},
 		&Model{},
 		&Vendor{},

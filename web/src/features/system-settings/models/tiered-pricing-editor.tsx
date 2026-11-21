@@ -230,24 +230,12 @@ const PRESET_GROUPS: PresetGroup[] = [
       },
       {
         key: 'per-second',
-        label: 'Per second (per_call)',
-        // Enumerated factors keep one traced request rule per supported second
-        // count, so the consume log shows which duration was billed.
-        expr: `tier("per_second", per_call(0.05))
-  * (param("seconds") == "2" ? 2 : 1)
-  * (param("seconds") == "3" ? 3 : 1)
-  * (param("seconds") == "4" ? 4 : 1)
-  * (param("seconds") == "5" ? 5 : 1)
-  * (param("seconds") == "6" ? 6 : 1)
-  * (param("seconds") == "7" ? 7 : 1)
-  * (param("seconds") == "8" ? 8 : 1)
-  * (param("seconds") == "9" ? 9 : 1)
-  * (param("seconds") == "10" ? 10 : 1)
-  * (param("seconds") == "11" ? 11 : 1)
-  * (param("seconds") == "12" ? 12 : 1)
-  * (param("seconds") == "13" ? 13 : 1)
-  * (param("seconds") == "14" ? 14 : 1)
-  * (param("seconds") == "15" ? 15 : 1)`,
+        label: 'Per second (param)',
+        // A per-call price times the requested duration. The dynamic factor
+        // replaces the enumerated chain (one equality per supported duration)
+        // and is still traced as the rule that actually applied. Task models
+        // price the same idea through u("seconds") in the task usage editor.
+        expr: 'tier("per_second", per_call(0.08)) * param("seconds")',
       },
       {
         key: 'gpt-image-1-mini',

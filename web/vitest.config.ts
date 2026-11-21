@@ -38,5 +38,14 @@ export default defineConfig({
     clearMocks: true,
     restoreMocks: true,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Interaction-heavy suites (models metadata, audit viewer, dashboard guide)
+    // legitimately take 2-4s per case. Under full-suite parallelism the jsdom
+    // event loop is saturated and the old 5s budget timed out on scheduling
+    // noise rather than on regressions, so give every case real headroom.
+    testTimeout: 20000,
+    hookTimeout: 20000,
+    // Cap workers: 16 concurrent jsdom environments starve each other on
+    // machines with moderate core counts.
+    maxWorkers: 6,
   },
 })

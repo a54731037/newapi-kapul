@@ -181,6 +181,38 @@ func appendPricingEndpoint(endpoints []string, endpoint string) []string {
 	return append(endpoints, endpoint)
 }
 
+// capabilityPricingEndpoints maps a channel's declared creative capability to
+// the relay endpoint that advertises it. A channel marked as serving image
+// generation or video therefore exposes that endpoint for every model it
+// carries, regardless of the model-name heuristics in
+// GetEndpointTypesByChannelType.
+var capabilityPricingEndpoints = map[string]string{
+	"image": string(constant.EndpointTypeImageGeneration),
+	"video": string(constant.EndpointTypeOpenAIVideo),
+}
+
+// loadPricingChannelCapabilities reads the creative capabilities each channel
+// declared in its settings. It runs under updatePricingLock and nests
+// channelSyncLock the same way loadPricingAdvancedCustomConfigs does.
+func loadPricingChannelCapabilities(enableAbilities []AbilityWithChannel) map[int][]string {
+	capabilities := make(map[int][]string)
+	for _, ability := range enableAbilities {
+		if _, seen := capabilities[ability.ChannelId]; seen {
+			continue
+		}
+		channel, err := CacheGetChannel(ability.ChannelId)
+		if err != nil {
+			continue
+		}
+		declared := channel.GetSetting().Capabilities
+		if len(declared) == 0 {
+			continue
+		}
+		capabilities[ability.ChannelId] = declared
+	}
+	return capabilities
+}
+
 func updatePricing() {
 	//modelRatios := common.GetModelRatios()
 	enableAbilities, err := GetAllEnableAbilityWithChannels()
@@ -233,6 +265,7 @@ func updatePricing() {
 	//这里使用切片而不是Set，因为一个模型可能支持多个端点类型，并且第一个端点是优先使用端点
 	modelSupportEndpointsStr := make(map[string][]string)
 	advancedCustomConfigs := loadPricingAdvancedCustomConfigs(enableAbilities)
+	channelCapabilities := loadPricingChannelCapabilities(enableAbilities)
 
 	// 先根据已有能力填充原生端点
 	for _, ability := range enableAbilities {
@@ -242,6 +275,10 @@ func updatePricing() {
 			if !common.StringsContains(endpoints, string(channelType)) {
 				endpoints = append(endpoints, string(channelType))
 			}
+		}
+		// 渠道声明的创作能力（生图/视频）同样作为该模型的能力对外暴露
+		for _, capability := range channelCapabilities[ability.ChannelId] {
+			endpoints = appendPricingEndpoint(endpoints, capabilityPricingEndpoints[capability])
 		}
 		modelSupportEndpointsStr[ability.Model] = endpoints
 	}

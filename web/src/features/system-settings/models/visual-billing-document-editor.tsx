@@ -35,8 +35,8 @@ import {
   type VisualPricingNode,
 } from '@/features/pricing/lib/billing-expression/visual'
 
-import { TierPriceFields } from './tier-price-fields'
 import { BillingMultiplierFields } from './billing-time-fields'
+import { TierPriceFields } from './tier-price-fields'
 import { VisualConditionTree } from './visual-condition-tree'
 
 function PricingBranch(props: {

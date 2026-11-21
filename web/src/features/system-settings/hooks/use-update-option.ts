@@ -43,6 +43,13 @@ const STATUS_RELATED_KEYS = new Set([
   'general_setting.docs_content',
   'oidc.display_name',
   'AffCommissionRate',
+  // 绘图板块开关直接决定画布标签与侧栏入口，改动后必须刷新 /api/status。
+  'DrawingEnabled',
+  'StudioEnabled',
+  'StudioImageEnabled',
+  'StudioCanvasEnabled',
+  'StudioVideoEnabled',
+  'StudioAudioEnabled',
   'AffCommissionExpireDays',
 ])
 

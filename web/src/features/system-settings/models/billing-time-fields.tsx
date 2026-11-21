@@ -34,6 +34,10 @@ import {
   COMMON_TIMEZONES,
   TIME_FUNCS,
 } from '@/features/pricing/lib/billing-expr'
+import type {
+  MultiplierMode,
+  MultiplierSpec,
+} from '@/features/pricing/lib/billing-expression/multiplier'
 import {
   REQUEST_PROBES,
   isRequestProbe,
@@ -41,10 +45,6 @@ import {
   type VisualComparison,
   type VisualValueKind,
 } from '@/features/pricing/lib/billing-expression/visual'
-import type {
-  MultiplierMode,
-  MultiplierSpec,
-} from '@/features/pricing/lib/billing-expression/multiplier'
 
 import { DraftNumberInput } from './draft-number-input'
 
@@ -235,7 +235,9 @@ export function BillingMultiplierFields(props: {
             label: t(PROBE_LABELS[probe]),
           }))}
           value={value.probe}
-          onValueChange={(probe) => probe && update({ probe: probe as RequestProbe })}
+          onValueChange={(probe) =>
+            probe && update({ probe: probe as RequestProbe })
+          }
         >
           <SelectTrigger
             size='sm'

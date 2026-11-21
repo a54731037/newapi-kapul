@@ -30,7 +30,10 @@ const legacyConsoleRoutes: Record<string, string> = {
   '/console/user': '/users',
   '/console/personal': '/profile',
   '/console/log': '/usage-logs',
-  '/console/midjourney': '/usage-logs/drawing',
+  // The drawing board is the node canvas now.
+  '/console/midjourney': '/studio?tab=canvas&view=canvas',
+  '/drawing': '/studio?tab=canvas&view=canvas',
+  '/console/drawing': '/studio?tab=canvas&view=canvas',
   '/console/task': '/usage-logs/task',
 }
 

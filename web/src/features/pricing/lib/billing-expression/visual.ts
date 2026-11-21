@@ -594,7 +594,11 @@ export function serializeVisualBillingDocument(
       ],
     }
   }
-  const replacement = multiplierText ? `${body} * ${multiplierText}` : body
+  // A branch body is a `?:` expression, and `*` binds tighter than `?:`, so an
+  // unwrapped factor would scale only the last branch. Single-call bodies keep
+  // their original text without extra parentheses.
+  const scaledBody = document.root.kind === 'branch' ? `(${body})` : body
+  const replacement = multiplierText ? `${scaledBody} * ${multiplierText}` : body
   const source =
     document.source.slice(0, original.ast.start) +
     replacement +

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/gin-gonic/gin"
@@ -96,4 +97,33 @@ func TestBillingExprRequestInputReadsMultipartImageEditFields(t *testing.T) {
 	// same as on the JSON generations endpoint; file parts stay out of the body.
 	require.Equal(t, float64(2), gjson.GetBytes(input.Body, "n").Float())
 	require.False(t, gjson.GetBytes(input.Body, "image").Exists())
+}
+
+// A frozen request input carries derived facts such as the image resolution
+// tier. Resolving it a second time must keep them, otherwise the second pass
+// prices a different tier than the pre-consume charge.
+func TestResolveIncomingBillingExprRequestInputKeepsFrozenFacts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	frozen := billingexpr.RequestInput{
+		Headers: map[string]string{"X-Frozen": "1"},
+		Body:    []byte(`{"size":"4096x4096"}`),
+		Usage:   map[string]any{"seconds": float64(6)},
+		Params:  map[string]any{"resolution": ImageResolution4K},
+	}
+	info := &relaycommon.RelayInfo{
+		RequestHeaders:      map[string]string{"X-Live": "2"},
+		BillingRequestInput: &frozen,
+	}
+
+	input, err := ResolveIncomingBillingExprRequestInput(nil, info)
+	require.NoError(t, err)
+	require.Equal(t, map[string]any{"resolution": ImageResolution4K}, input.Params)
+	require.Equal(t, map[string]any{"seconds": float64(6)}, input.Usage)
+	require.Equal(t, "1", input.Headers["X-Frozen"])
+	require.Equal(t, "2", input.Headers["X-Live"])
+
+	// The copy must be independent of the frozen original.
+	input.Params["resolution"] = ImageResolution1K
+	require.Equal(t, ImageResolution4K, frozen.Params["resolution"])
 }

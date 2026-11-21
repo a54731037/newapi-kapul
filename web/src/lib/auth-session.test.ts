@@ -17,13 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { QueryClient } from '@tanstack/react-query'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 
 import { useAuthStore, type AuthBundle } from '../stores/auth-store'
 import {
   applyAuthRotation,
   bootstrapAuthentication,
   clearAuthenticatedClientState,
+  clearAuthentication,
   createRefreshRunner,
   isAuthBundle,
   type AuthRefreshRuntime,
@@ -55,6 +56,27 @@ afterEach(() => {
 })
 
 describe('authentication session coordination', () => {
+  test('sign-out clears old video credentials while preserving non-secret task metadata', () => {
+    window.localStorage.setItem('video-task-key:legacy', 'legacy-test-key')
+    window.sessionStorage.setItem('video-task-key:legacy', 'legacy-test-key')
+    window.localStorage.setItem('video-studio-tasks:42', '[]')
+    useAuthStore.getState().auth.setBundle(bundle)
+    clearAuthentication(false)
+    expect(window.localStorage.getItem('video-task-key:legacy')).toBeNull()
+    expect(window.sessionStorage.getItem('video-task-key:legacy')).toBeNull()
+    expect(window.localStorage.getItem('video-studio-tasks:42')).toBe('[]')
+    window.localStorage.removeItem('video-studio-tasks:42')
+  })
+
+  test('storage access errors do not interrupt sign-out', () => {
+    useAuthStore.getState().auth.setBundle(bundle)
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => {
+      throw new DOMException('blocked', 'SecurityError')
+    })
+    expect(() => clearAuthentication(false)).not.toThrow()
+    expect(useAuthStore.getState().auth.user).toBeNull()
+  })
+
   test('bootstrap distinguishes a completed anonymous check from an active session', async () => {
     useAuthStore.getState().auth.reset('complete')
     expect(await bootstrapAuthentication()).toEqual({ kind: 'anonymous' })

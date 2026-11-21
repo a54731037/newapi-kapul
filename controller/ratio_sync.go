@@ -407,6 +407,19 @@ func FetchUpstreamRatios(c *gin.Context) {
 				return
 			}
 
+			// type5: LiteLLM price table (e.g. model_prices_and_context_window.json)
+			// from any URL, including custom mirrors.
+			if isLiteLLMPricingPayload(bodyBytes) {
+				converted, err := convertLiteLLMToRatioData(bytes.NewReader(bodyBytes))
+				if err != nil {
+					logger.LogWarn(c.Request.Context(), "LiteLLM parse failed from "+chItem.Name+": "+err.Error())
+					ch <- upstreamResult{Name: uniqueName, Err: err.Error()}
+					return
+				}
+				ch <- upstreamResult{Name: uniqueName, Data: converted}
+				return
+			}
+
 			// 兼容两种上游接口格式：
 			//  type1: /api/ratio_config -> data 为 map[string]any，包含 model_ratio/completion_ratio/cache_ratio/model_price
 			//  type2: /api/pricing      -> data 为 []Pricing 列表，需要转换为与 type1 相同的 map 格式

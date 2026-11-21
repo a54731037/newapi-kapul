@@ -107,44 +107,61 @@ export function ChannelsPrimaryButtons() {
   return (
     <>
       <div className='flex items-center gap-2'>
-        {/* Desktop: Toggle switches visible */}
-        <div className='hidden items-center gap-2 rounded-md border px-3 py-1.5 sm:flex'>
-          <ListChecks className='text-muted-foreground h-4 w-4' />
-          <Label
-            htmlFor='channel-batch-mode'
-            className='cursor-pointer text-sm'
-          >
-            {t('Batch Operations')}
-          </Label>
-          <Switch
-            id='channel-batch-mode'
-            checked={batchMode}
-            onCheckedChange={handleBatchModeToggle}
-          />
-        </div>
+        {/* Desktop: one segmented group instead of three bordered boxes. */}
+        <div className='border-border/70 bg-muted/40 hidden items-center gap-0.5 rounded-lg border p-1 sm:flex'>
+          <div className='hover:bg-background/70 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors'>
+            <ListChecks
+              className='text-muted-foreground size-3.5'
+              aria-hidden='true'
+            />
+            <Label
+              htmlFor='channel-batch-mode'
+              className='text-muted-foreground cursor-pointer text-[13px] font-medium'
+            >
+              {t('Batch Operations')}
+            </Label>
+            <Switch
+              id='channel-batch-mode'
+              checked={batchMode}
+              onCheckedChange={handleBatchModeToggle}
+            />
+          </div>
 
-        <div className='hidden items-center gap-2 rounded-md border px-3 py-1.5 sm:flex'>
-          <Tags className='text-muted-foreground h-4 w-4' />
-          <Label htmlFor='tag-mode' className='cursor-pointer text-sm'>
-            {t('Tag Mode')}
-          </Label>
-          <Switch
-            id='tag-mode'
-            checked={enableTagMode}
-            onCheckedChange={handleTagModeToggle}
-          />
-        </div>
+          <div className='hover:bg-background/70 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors'>
+            <Tags
+              className='text-muted-foreground size-3.5'
+              aria-hidden='true'
+            />
+            <Label
+              htmlFor='tag-mode'
+              className='text-muted-foreground cursor-pointer text-[13px] font-medium'
+            >
+              {t('Tag Mode')}
+            </Label>
+            <Switch
+              id='tag-mode'
+              checked={enableTagMode}
+              onCheckedChange={handleTagModeToggle}
+            />
+          </div>
 
-        <div className='hidden items-center gap-2 rounded-md border px-3 py-1.5 sm:flex'>
-          <SortAsc className='text-muted-foreground h-4 w-4' />
-          <Label htmlFor='id-sort' className='cursor-pointer text-sm'>
-            {t('Sort by ID')}
-          </Label>
-          <Switch
-            id='id-sort'
-            checked={idSort}
-            onCheckedChange={handleIdSortToggle}
-          />
+          <div className='hover:bg-background/70 flex items-center gap-1.5 rounded-md px-2 py-1 transition-colors'>
+            <SortAsc
+              className='text-muted-foreground size-3.5'
+              aria-hidden='true'
+            />
+            <Label
+              htmlFor='id-sort'
+              className='text-muted-foreground cursor-pointer text-[13px] font-medium'
+            >
+              {t('Sort by ID')}
+            </Label>
+            <Switch
+              id='id-sort'
+              checked={idSort}
+              onCheckedChange={handleIdSortToggle}
+            />
+          </div>
         </div>
 
         {/* Create Channel */}

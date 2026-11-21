@@ -31,7 +31,7 @@ function Table({
     <table
       data-slot='table'
       className={cn(
-        'w-full caption-bottom text-sm tabular-nums [font-family:var(--font-body)] [&_td]:text-sm [&_td]:font-medium [&_th]:text-sm [&_:is(th,td)_*]:[font-family:inherit] [&_:is(th,td)_*]:[font-size:inherit] [&_:is(th,td)_*]:[font-weight:inherit]',
+        'w-full caption-bottom text-[13px] tabular-nums [font-family:var(--font-body)] [&_td]:text-[13px] [&_th]:text-[12px] [&_:is(th,td)_*]:[font-family:inherit] [&_:is(th,td)_*]:[font-size:inherit] [&_:is(th,td)_*]:[font-weight:inherit]',
         '[&_[data-table-text=secondary]]:text-xs [&_[data-table-text=secondary]]:font-normal',
         className
       )}
@@ -65,7 +65,7 @@ function TableBody({ className, ...props }: React.ComponentProps<'tbody'>) {
   return (
     <tbody
       data-slot='table-body'
-      className={cn('[&>tr]:h-15 [&_tr:last-child]:border-0', className)}
+      className={cn('[&>tr]:h-12 [&_tr:last-child]:border-0', className)}
       {...props}
     />
   )
@@ -102,7 +102,7 @@ function TableHead({ className, ...props }: React.ComponentProps<'th'>) {
     <th
       data-slot='table-head'
       className={cn(
-        'text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0',
+        'text-muted-foreground h-9 px-3 text-left align-middle text-[12px] font-medium tracking-wide whitespace-nowrap [&:has([role=checkbox])]:pr-0',
         className
       )}
       {...props}
@@ -115,7 +115,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
     <td
       data-slot='table-cell'
       className={cn(
-        'p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0',
+        'px-3 py-2.5 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0',
         className
       )}
       {...props}

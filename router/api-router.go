@@ -70,6 +70,17 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/verify/methods", middleware.UserAuth(), middleware.DisableCache(), controller.GetVerificationMethods)
 		apiRouter.POST("/verify", middleware.UserAuth(), middleware.CriticalRateLimit(), middleware.UserCriticalRateLimit("security-verification"), middleware.DisableCache(), controller.UniversalVerify)
 
+		creativeRoute := apiRouter.Group("/creative")
+		creativeRoute.Use(middleware.DisableCache(), middleware.UserAuth())
+		{
+			creativeRoute.POST("/image-jobs", controller.CreateImageJob)
+			creativeRoute.GET("/image-jobs", controller.ListImageJobs)
+			creativeRoute.GET("/image-jobs/:id", controller.GetImageJob)
+			creativeRoute.GET("/image-jobs/:id/images/:index", controller.GetImageJobImage)
+			creativeRoute.DELETE("/image-jobs/:id", controller.DeleteImageJob)
+			creativeRoute.DELETE("/image-jobs/:id/images/:index", controller.DeleteImageJobImage)
+		}
+
 		userRoute := apiRouter.Group("/user")
 		{
 			userRoute.POST("/auth/refresh", middleware.SessionCookieOriginGuard(), middleware.CriticalRateLimit(), middleware.DisableCache(), controller.RefreshAuth)

@@ -270,21 +270,13 @@ describe('visual time billing editor', () => {
     )
 
     await user.click(screen.getByRole('button', { name: 'More templates...' }))
-    await user.click(
-      screen.getByRole('button', { name: 'Per second (per_call)' })
-    )
+    await user.click(screen.getByRole('button', { name: 'Per second (param)' }))
 
-    const emitted = onBillingExprChange.mock.lastCall?.[0] as string
-    expect(emitted).toContain('tier("per_second", per_call(0.05))')
-    expect(emitted).toContain('(param("seconds") == "15" ? 15 : 1)')
-    // The enumerated factor is a visual structure now: one row per second count.
-    expect(
-      screen.getByRole('combobox', { name: 'Request multiplier mode' })
-    ).toHaveTextContent('By unit list')
-    const units = screen.getAllByRole('spinbutton', { name: 'Unit value' })
-    expect(units).toHaveLength(14)
-    expect(units[0]).toHaveValue(2)
-    expect(units[13]).toHaveValue(15)
+    // One per-call price times the requested duration replaces the enumerated
+    // factor chain that listed every supported second count.
+    expect(onBillingExprChange.mock.lastCall?.[0]).toBe(
+      'tier("per_second", per_call(0.08)) * param("seconds")'
+    )
   })
   test('seeds video resolution tiers priced per second from a preset', async () => {
     const onBillingExprChange = vi.fn()
@@ -300,7 +292,9 @@ describe('visual time billing editor', () => {
 
     await user.click(screen.getByRole('button', { name: 'More templates...' }))
     await user.click(
-      screen.getByRole('button', { name: 'Video resolution × seconds (per_call)' })
+      screen.getByRole('button', {
+        name: 'Video resolution × seconds (per_call)',
+      })
     )
 
     // Resolution tiers plus a duration factor, both editable in the flat editor.
@@ -364,9 +358,7 @@ describe('visual time billing editor', () => {
     expect(onBillingExprChange).toHaveBeenLastCalledWith(
       '(tier("per_second", per_call(0.05))) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "4" ? 4 : 1) * (param("seconds") == "5" ? 5 : 1)'
     )
-    await user.click(
-      screen.getAllByRole('button', { name: 'Remove unit' })[0]
-    )
+    await user.click(screen.getAllByRole('button', { name: 'Remove unit' })[0])
     expect(onBillingExprChange).toHaveBeenLastCalledWith(
       '(tier("per_second", per_call(0.05))) * (param("seconds") == "4" ? 4 : 1) * (param("seconds") == "5" ? 5 : 1)'
     )
@@ -425,9 +417,7 @@ describe('visual time billing editor', () => {
       '(tier("per_second", per_call(0.05))) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "3" ? 3 : 1) * (param("seconds") == "4" ? 4 : 1)'
     )
 
-    await user.click(
-      screen.getAllByRole('button', { name: 'Remove unit' })[2]
-    )
+    await user.click(screen.getAllByRole('button', { name: 'Remove unit' })[2])
     expect(onBillingExprChange.mock.lastCall?.[0]).toBe(
       '(tier("per_second", per_call(0.05))) * (param("seconds") == "2" ? 2 : 1) * (param("seconds") == "3" ? 3 : 1)'
     )

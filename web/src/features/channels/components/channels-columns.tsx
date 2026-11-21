@@ -23,9 +23,11 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
+  Image as ImageIcon,
   ListOrdered,
   Shuffle,
   SlidersHorizontal,
+  Video as VideoIcon,
 } from 'lucide-react'
 import { useState, useMemo, useContext, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -38,6 +40,7 @@ import { ProviderBadge } from '@/components/provider-badge'
 import { StatusBadge, type StatusBadgeProps } from '@/components/status-badge'
 import { TableId } from '@/components/table-id'
 import { TruncatedText } from '@/components/truncated-text'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -82,7 +85,7 @@ import {
   type TagRow,
 } from '../lib'
 import { parseUpstreamUpdateMeta } from '../lib/upstream-update-utils'
-import type { Channel } from '../types'
+import type { Channel, ChannelCapability } from '../types'
 import { ChannelRowActionsLayoutContext } from './channel-row-actions-context'
 import { TaskPluginChannelBadge } from './channel-type-badge'
 import { useChannels } from './channels-provider'
@@ -333,6 +336,15 @@ const SENSITIVE_MASK = '••••'
 /**
  * Balance cell component with click to update
  */
+/** Channel capability markers declared in the channel's extra settings. */
+const CAPABILITY_BADGES: Record<
+  ChannelCapability,
+  { labelKey: string; icon: typeof ImageIcon }
+> = {
+  image: { labelKey: 'Image generation', icon: ImageIcon },
+  video: { labelKey: 'Video generation', icon: VideoIcon },
+}
+
 export function BalanceCell({ channel }: { channel: Channel }) {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
@@ -735,6 +747,23 @@ export function useChannelsColumns(
                     </TooltipProvider>
                   )}
                   <UpstreamUpdateTags channel={channel} />
+                  {(settings.capabilities ?? []).map((capability) => {
+                    const badge = CAPABILITY_BADGES[capability]
+                    if (!badge) {
+                      return null
+                    }
+                    const Icon = badge.icon
+                    return (
+                      <Badge
+                        key={capability}
+                        variant='secondary'
+                        className='gap-1 px-1.5 py-0 text-[10px] font-normal'
+                      >
+                        <Icon className='h-3 w-3' aria-hidden='true' />
+                        {t(badge.labelKey)}
+                      </Badge>
+                    )
+                  })}
                 </div>
                 {channel.remark && (
                   <TooltipProvider delay={200}>

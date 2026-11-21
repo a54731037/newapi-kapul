@@ -21,6 +21,7 @@ import axios from 'axios'
 import { t } from 'i18next'
 
 import { publishAuthSessionEvent } from '@/lib/auth-session-sync'
+import { clearLegacyVideoCredentials } from '@/lib/creative-credentials'
 import { hasSessionHint } from '@/lib/session-hint'
 import {
   useAuthStore,
@@ -191,6 +192,7 @@ export function clearAuthentication(
   const sid = useAuthStore.getState().auth.session?.sid
   authEpoch += 1
   useAuthStore.getState().auth.reset(bootstrapState)
+  clearLegacyVideoCredentials()
   if (synchronizeTabs && sid) {
     publishAuthSessionEvent('signed_out', sid)
   }

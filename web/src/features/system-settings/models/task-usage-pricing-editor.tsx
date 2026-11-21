@@ -23,6 +23,7 @@ import { toast } from 'sonner'
 
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Combobox } from '@/components/ui/combobox'
 import { Field, FieldDescription, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -631,6 +632,17 @@ export const TaskUsagePricingEditor = memo(function TaskUsagePricingEditor(
                 ) : null}
               </AlertDescription>
             </Alert>
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              className='w-fit'
+              onClick={() =>
+                handleRawChange('tier("per_second", u("seconds") * 0.08)')
+              }
+            >
+              {t('Per second template')}
+            </Button>
             <Textarea
               value={rawExpr}
               onChange={(event) => handleRawChange(event.target.value)}

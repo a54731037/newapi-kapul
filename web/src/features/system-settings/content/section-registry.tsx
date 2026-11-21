@@ -102,16 +102,15 @@ const CONTENT_SECTIONS = [
   },
   {
     id: 'drawing',
-    titleKey: 'Drawing',
+    titleKey: 'Studio',
     build: (settings: ContentSettings) => (
       <DrawingSettingsSection
         defaultValues={{
-          DrawingEnabled: settings.DrawingEnabled,
-          MjNotifyEnabled: settings.MjNotifyEnabled,
-          MjAccountFilterEnabled: settings.MjAccountFilterEnabled,
-          MjForwardUrlEnabled: settings.MjForwardUrlEnabled,
-          MjModeClearEnabled: settings.MjModeClearEnabled,
-          MjActionCheckSuccessEnabled: settings.MjActionCheckSuccessEnabled,
+          StudioEnabled: settings.StudioEnabled,
+          StudioImageEnabled: settings.StudioImageEnabled,
+          StudioCanvasEnabled: settings.StudioCanvasEnabled,
+          StudioVideoEnabled: settings.StudioVideoEnabled,
+          StudioAudioEnabled: settings.StudioAudioEnabled,
         }}
       />
     ),

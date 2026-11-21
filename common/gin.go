@@ -228,6 +228,18 @@ func ApiErrorI18n(c *gin.Context, key string, args ...map[string]any) {
 	})
 }
 
+// ApiErrorI18nWithCode additionally returns the i18n key as `code`, so a client
+// can branch on a stable identifier instead of the translated message, whose
+// text changes with the request locale.
+func ApiErrorI18nWithCode(c *gin.Context, key string, args ...map[string]any) {
+	msg := TranslateMessage(c, key, args...)
+	c.JSON(http.StatusOK, gin.H{
+		"success": false,
+		"message": msg,
+		"code":    key,
+	})
+}
+
 // ApiSuccessI18n returns a translated success message based on the user's language preference
 func ApiSuccessI18n(c *gin.Context, key string, data any, args ...map[string]any) {
 	msg := TranslateMessage(c, key, args...)

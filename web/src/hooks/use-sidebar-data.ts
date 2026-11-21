@@ -19,6 +19,8 @@ For commercial licensing, please contact support@quantumnous.com
 import {
   Activity,
   Box,
+  Brush,
+  Clapperboard,
   ClipboardList,
   CreditCard,
   FileText,
@@ -40,6 +42,11 @@ import {
 import { useTranslation } from 'react-i18next'
 
 import type { SidebarData } from '@/components/layout/types'
+import {
+  resolveStudioTabs,
+  type StudioAccessStatus,
+} from '@/features/studio/lib/tab-access'
+import { useStatus } from '@/hooks/use-status'
 import { ROLE } from '@/lib/roles'
 
 /**
@@ -50,6 +57,12 @@ import { ROLE } from '@/lib/roles'
  */
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation()
+  const { status } = useStatus()
+  // The creative workspace has a master switch plus per-feature switches; the
+  // drawing board entry only exists while the canvas tab does.
+  const studioTabs = resolveStudioTabs(status as StudioAccessStatus | null)
+  const drawingEnabled = studioTabs.includes('canvas')
+  const videoOnly = !drawingEnabled && studioTabs.includes('video')
 
   return {
     navGroups: [
@@ -67,6 +80,24 @@ export function useSidebarData(): SidebarData {
             icon: MessageSquare,
             type: 'chat-presets',
           },
+          ...(drawingEnabled
+            ? [
+                {
+                  title: t('Drawing Board'),
+                  url: '/studio',
+                  icon: Brush,
+                },
+              ]
+            : []),
+          ...(videoOnly
+            ? [
+                {
+                  title: t('Video Studio'),
+                  url: '/studio?tab=video',
+                  icon: Clapperboard,
+                },
+              ]
+            : []),
         ],
       },
       {
@@ -101,8 +132,7 @@ export function useSidebarData(): SidebarData {
           {
             title: t('Task Logs'),
             url: '/usage-logs/task',
-            activeUrls: ['/usage-logs/drawing'],
-            configUrls: ['/usage-logs/drawing', '/usage-logs/task'],
+            configUrls: ['/usage-logs/task'],
             icon: ListTodo,
           },
         ],

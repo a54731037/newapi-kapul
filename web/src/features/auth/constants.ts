@@ -33,7 +33,9 @@ export const registerFormSchema = z
   .object({
     username: z.string().min(1, 'Please enter your username'),
     email: z.string().optional(),
-    aff_code: z.string().optional(),
+    // Mirrors the server-side AffCode limit, so an over-long code from a URL is
+    // reported on the field instead of as a generic invalid-input error.
+    aff_code: z.string().max(32, 'Invalid invitation code').optional(),
     password: accountPasswordSchema,
     confirmPassword: z.string().min(1, 'Please confirm your password'),
   })

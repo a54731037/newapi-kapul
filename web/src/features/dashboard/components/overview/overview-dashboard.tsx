@@ -186,19 +186,19 @@ function buildCurlCommand(args: {
 function SetupGuideBackdrop(props: { compact?: boolean }) {
   return (
     <>
+      {/* Neutral grid instead of a colored wash: the panel stays part of the
+       * page surface, and the code sample behind it supplies the texture. */}
       <div
         className={cn(
-          'pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_48%_120%_at_78%_0%,color-mix(in_oklch,var(--overview-accent-1)_14%,transparent)_0%,transparent_62%),linear-gradient(112deg,color-mix(in_oklch,var(--card)_94%,var(--overview-accent-2)_6%)_0%,color-mix(in_oklch,var(--card)_94%,var(--overview-accent-3)_6%)_48%,color-mix(in_oklch,var(--background)_90%,var(--overview-accent-1)_10%)_100%)] dark:opacity-60',
-          props.compact
-            ? '[mask-image:linear-gradient(90deg,black_0%,black_48%,transparent_74%)] opacity-55'
-            : 'opacity-85'
+          'pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] bg-[size:2.5rem_2.5rem] [mask-image:linear-gradient(105deg,transparent_0%,black_55%,black_100%)]',
+          props.compact ? 'opacity-25' : 'opacity-40'
         )}
         aria-hidden='true'
       />
       <div
         className={cn(
-          'text-foreground/5 dark:text-foreground/8 pointer-events-none absolute inset-y-0 right-0 hidden overflow-hidden font-mono sm:block',
-          props.compact ? 'w-1/2 opacity-45' : 'w-[58%] opacity-75'
+          'text-foreground/[0.04] pointer-events-none absolute inset-y-0 right-0 hidden overflow-hidden font-mono sm:block',
+          props.compact ? 'w-1/2' : 'w-[58%]'
         )}
         aria-hidden='true'
       >
@@ -213,10 +213,6 @@ function SetupGuideBackdrop(props: { compact?: boolean }) {
           {SETUP_GUIDE_CODE_PATTERN}
         </pre>
       </div>
-      <div
-        className='from-background/35 to-background/70 dark:from-background/20 dark:to-background/80 pointer-events-none absolute inset-0 bg-linear-to-b via-transparent'
-        aria-hidden='true'
-      />
     </>
   )
 }

@@ -982,6 +982,14 @@ func (channel *Channel) ValidateSettings() error {
 	if err := channelParams.ValidateHTTPTransport(); err != nil {
 		return err
 	}
+	for _, capability := range channelParams.Capabilities {
+		switch capability {
+		case dto.ChannelCapabilityImage, dto.ChannelCapabilityVideo:
+		default:
+			return fmt.Errorf("invalid channel capability %q: use %s or %s",
+				capability, dto.ChannelCapabilityImage, dto.ChannelCapabilityVideo)
+		}
+	}
 	channelOtherSettings := &dto.ChannelOtherSettings{}
 	if channel.OtherSettings != "" {
 		err := common.UnmarshalJsonStr(channel.OtherSettings, channelOtherSettings)

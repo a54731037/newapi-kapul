@@ -71,9 +71,7 @@ function DocsPage() {
             </CardHeader>
             <CardContent className='space-y-4'>
               <p className='text-muted-foreground text-sm'>
-                {t(
-                  '管理员配置了外部文档链接。'
-                )}
+                {t('管理员配置了外部文档链接。')}
               </p>
               <Button
                 render={

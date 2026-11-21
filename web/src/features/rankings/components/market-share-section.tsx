@@ -225,7 +225,7 @@ export function MarketShareSection(props: MarketShareSectionProps) {
       </header>
 
       <div className='px-5 pb-5'>
-        <div className='h-60 sm:h-72'>
+        <div className={spec ? 'h-60 sm:h-72' : 'h-20'}>
           {themeReady && spec ? (
             <VChart
               key={`vendor-share-${resolvedTheme}-${props.period}`}

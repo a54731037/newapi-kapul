@@ -36,7 +36,7 @@ export function CTA(props: CTAProps) {
   }
 
   return (
-    <section className='relative z-10 overflow-hidden px-6 py-24 md:py-32'>
+    <section className='overflow-hidden px-4 py-16 sm:px-6 md:py-20 lg:px-8'>
       {/* Gradient mesh background */}
       <div
         aria-hidden

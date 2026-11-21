@@ -15,10 +15,14 @@ type PaymentSetting struct {
 
 const CurrentComplianceTermsVersion = "v1"
 
-// 默认配置
+// 默认配置。
+// 合规确认步骤已按运营要求移除：支付设置不再要求管理员逐条确认条款，
+// 因此新安装默认视为已确认当前条款版本。将配置显式改为 false 仍可关闭支付能力。
 var paymentSetting = PaymentSetting{
-	AmountOptions:  []int{10, 20, 50, 100, 200, 500},
-	AmountDiscount: map[int]float64{},
+	AmountOptions:          []int{10, 20, 50, 100, 200, 500},
+	AmountDiscount:         map[int]float64{},
+	ComplianceConfirmed:    true,
+	ComplianceTermsVersion: CurrentComplianceTermsVersion,
 }
 
 func init() {

@@ -56,6 +56,11 @@ func InitOptionMap() {
 	common.OptionMap["DisplayInCurrencyEnabled"] = strconv.FormatBool(common.DisplayInCurrencyEnabled)
 	common.OptionMap["DisplayTokenStatEnabled"] = strconv.FormatBool(common.DisplayTokenStatEnabled)
 	common.OptionMap["DrawingEnabled"] = strconv.FormatBool(common.DrawingEnabled)
+	common.OptionMap["StudioEnabled"] = strconv.FormatBool(common.StudioEnabled)
+	common.OptionMap["StudioImageEnabled"] = strconv.FormatBool(common.StudioImageEnabled)
+	common.OptionMap["StudioCanvasEnabled"] = strconv.FormatBool(common.StudioCanvasEnabled)
+	common.OptionMap["StudioVideoEnabled"] = strconv.FormatBool(common.StudioVideoEnabled)
+	common.OptionMap["StudioAudioEnabled"] = strconv.FormatBool(common.StudioAudioEnabled)
 	common.OptionMap["TaskEnabled"] = strconv.FormatBool(common.TaskEnabled)
 	common.OptionMap["TaskPluginEnabled"] = strconv.FormatBool(constant.TaskPluginEnabled)
 	jsplugin.DefaultRegistry.SetEnabled(constant.TaskPluginEnabled)
@@ -390,6 +395,16 @@ func updateOptionMap(key string, value string) (err error) {
 			common.DisplayTokenStatEnabled = boolValue
 		case "DrawingEnabled":
 			common.DrawingEnabled = boolValue
+		case "StudioEnabled":
+			common.StudioEnabled = boolValue
+		case "StudioImageEnabled":
+			common.StudioImageEnabled = boolValue
+		case "StudioCanvasEnabled":
+			common.StudioCanvasEnabled = boolValue
+		case "StudioVideoEnabled":
+			common.StudioVideoEnabled = boolValue
+		case "StudioAudioEnabled":
+			common.StudioAudioEnabled = boolValue
 		case "TaskEnabled":
 			common.TaskEnabled = boolValue
 		case "TaskPluginEnabled":

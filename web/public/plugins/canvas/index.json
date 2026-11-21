@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "plugins": [
+    { "id": "clock", "entry": "/plugins/canvas/clock.js" },
+    { "id": "swatch", "entry": "/plugins/canvas/swatch.js" },
+    { "id": "note", "entry": "/plugins/canvas/note.js" }
+  ]
+}

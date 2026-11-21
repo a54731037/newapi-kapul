@@ -178,9 +178,10 @@ function IsolatedHtmlContent(props: {
       const href = anchor.getAttribute('href')
       if (!href || href === '#') return
 
-      // Use attribute selector for maximum compatibility across browsers
+      // Escape the fragment: it becomes part of a CSS selector, and a heading
+      // id containing quotes or brackets would throw instead of scrolling.
       const targetId = href.slice(1)
-      const target = wrapper.querySelector(`[id="${targetId}"]`)
+      const target = wrapper.querySelector(`#${CSS.escape(targetId)}`)
       if (!target) return
 
       e.preventDefault()

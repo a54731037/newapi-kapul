@@ -18,10 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { parseCurrencyDisplayType } from '@/lib/currency'
 
+import { AffiliateSettingsSection } from '../general/affiliate-settings-section'
 import { CheckinSettingsSection } from '../general/checkin-settings-section'
 import { PricingSection } from '../general/pricing-section'
 import { QuotaSettingsSection } from '../general/quota-settings-section'
-import { AffiliateSettingsSection } from '../general/affiliate-settings-section'
 import { PaymentSettingsSection } from '../integrations/payment-settings-section'
 import { RatioSettingsCard } from '../models/ratio-settings-card'
 import type { BillingSettings } from '../types'
@@ -86,10 +86,6 @@ const BILLING_SECTIONS = [
           AffCommissionRate: settings.AffCommissionRate,
           AffCommissionExpireDays: settings.AffCommissionExpireDays,
         }}
-        complianceConfirmed={
-          (settings['payment_setting.compliance_confirmed'] ?? false) &&
-          settings['payment_setting.compliance_terms_version'] === 'v1'
-        }
       />
     ),
   },
@@ -192,13 +188,6 @@ const BILLING_SECTIONS = [
         }}
         waffoPancakeProvisionedStoreID={settings.WaffoPancakeStoreID ?? ''}
         waffoPancakeProvisionedProductID={settings.WaffoPancakeProductID ?? ''}
-        complianceDefaults={{
-          confirmed: settings['payment_setting.compliance_confirmed'] ?? false,
-          termsVersion:
-            settings['payment_setting.compliance_terms_version'] ?? '',
-          confirmedAt: settings['payment_setting.compliance_confirmed_at'] ?? 0,
-          confirmedBy: settings['payment_setting.compliance_confirmed_by'] ?? 0,
-        }}
       />
     ),
   },

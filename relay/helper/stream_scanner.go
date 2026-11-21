@@ -302,9 +302,34 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 	}
 
 	cleanup()
-	if info.StreamStatus.IsNormalEnd() && !info.StreamStatus.HasErrors() {
-		logger.LogInfo(c, fmt.Sprintf("stream ended: %s", info.StreamStatus.Summary()))
-	} else {
-		logger.LogError(c, fmt.Sprintf("stream ended: %s, received=%d", info.StreamStatus.Summary(), info.ReceivedResponseCount))
+	// A stream that never saw [DONE] and lost the upstream connection is what a
+	// client reports as an interrupted response stream. Log it with an explicit
+	// reason so "interrupted" can be traced to upstream, timeout, or client exit
+	// instead of guessing from a truncated body.
+	switch info.StreamStatus.EndReason {
+	case relaycommon.StreamEndReasonEOF, relaycommon.StreamEndReasonScannerErr:
+		logger.LogWarn(c.Request.Context(), fmt.Sprintf(
+			"upstream stream interrupted before [DONE]: %s, received=%d",
+			info.StreamStatus.Summary(),
+			info.ReceivedResponseCount,
+		))
+	case relaycommon.StreamEndReasonTimeout:
+		logger.LogWarn(c.Request.Context(), fmt.Sprintf(
+			"upstream stream interrupted by STREAMING_TIMEOUT (%ds): received=%d",
+			int64(streamingTimeout.Seconds()),
+			info.ReceivedResponseCount,
+		))
+	case relaycommon.StreamEndReasonClientGone:
+		logger.LogInfo(c, fmt.Sprintf(
+			"stream cancelled by client: %s, received=%d",
+			info.StreamStatus.Summary(),
+			info.ReceivedResponseCount,
+		))
+	default:
+		if info.StreamStatus.IsNormalEnd() && !info.StreamStatus.HasErrors() {
+			logger.LogInfo(c, fmt.Sprintf("stream ended: %s", info.StreamStatus.Summary()))
+		} else {
+			logger.LogError(c, fmt.Sprintf("stream ended: %s, received=%d", info.StreamStatus.Summary(), info.ReceivedResponseCount))
+		}
 	}
 }

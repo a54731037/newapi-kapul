@@ -183,7 +183,9 @@ export function SignUpForm({
         toast.success(t('Account created! Please sign in'))
         redirectToLogin()
       } else {
-        if (res.message === 'user.invite_code_invalid') {
+        // The server sends the i18n key as `code`; the message itself is
+        // translated, so it cannot be compared against.
+        if (res.code === 'user.invite_code_invalid') {
           form.setError('aff_code', {
             message: t('Invalid invitation code'),
           })

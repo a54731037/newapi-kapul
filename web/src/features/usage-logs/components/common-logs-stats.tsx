@@ -38,7 +38,7 @@ function StatBadge(props: {
   accent: string
 }) {
   return (
-    <span className='border-border/60 bg-muted/25 inline-flex h-7 items-center gap-2 rounded-md border px-2.5 text-xs shadow-xs'>
+    <span className='border-border/70 bg-muted/40 inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-[12px]'>
       <span className={cn('h-3.5 w-0.5 rounded-full', props.accent)} />
       <span className='text-muted-foreground'>{props.label}</span>
       <span className='text-foreground/85 font-mono font-semibold tabular-nums'>
@@ -79,9 +79,9 @@ export function CommonLogsStats() {
   if (isLoading) {
     return (
       <div className='flex items-center gap-2'>
-        <Skeleton className='h-7 w-[150px] rounded-md' />
-        <Skeleton className='h-7 w-[100px] rounded-md' />
-        <Skeleton className='h-7 w-[120px] rounded-md' />
+        <Skeleton className='h-8 w-[150px] rounded-lg' />
+        <Skeleton className='h-8 w-[100px] rounded-lg' />
+        <Skeleton className='h-8 w-[120px] rounded-lg' />
       </div>
     )
   }
@@ -91,17 +91,17 @@ export function CommonLogsStats() {
       <StatBadge
         label={t('Usage')}
         value={sensitiveVisible ? formatLogQuota(stats?.quota || 0) : '••••'}
-        accent='bg-sky-500/70'
+        accent='bg-primary/80'
       />
       <StatBadge
         label={t('RPM')}
         value={stats?.rpm || 0}
-        accent='bg-rose-500/65'
+        accent='bg-primary/50'
       />
       <StatBadge
         label={t('TPM')}
         value={stats?.tpm || 0}
-        accent='bg-slate-400/70'
+        accent='bg-primary/30'
       />
     </div>
   )

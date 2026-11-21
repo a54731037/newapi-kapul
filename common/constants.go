@@ -12,7 +12,7 @@ import (
 
 var StartTime = time.Now().Unix() // unit: second
 var Version = "v0.0.0"            // this hard coding will be replaced automatically when building, no need to manually change
-var SystemName = "New API"
+var SystemName = "AI Studio"
 var Footer = ""
 var Logo = ""
 var TopUpLink = ""
@@ -24,6 +24,14 @@ var QuotaPerUnit = 500 * 1000.0 // $0.002 / 1K tokens
 var DisplayInCurrencyEnabled = true
 var DisplayTokenStatEnabled = true
 var DrawingEnabled = true
+
+// 创作工作台总开关与各子功能开关。DrawingEnabled 保留为画布的历史别名，
+// 新的后台开关以 Studio* 为准。
+var StudioEnabled = true
+var StudioImageEnabled = true
+var StudioCanvasEnabled = true
+var StudioVideoEnabled = true
+var StudioAudioEnabled = true
 var TaskEnabled = true
 var DataExportEnabled = true
 var DataExportInterval = 5         // unit: minute

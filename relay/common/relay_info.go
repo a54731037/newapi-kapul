@@ -963,6 +963,7 @@ func (t *TaskSubmitReq) UnmarshalJSON(data []byte) error {
 	aux := &struct {
 		Metadata json.RawMessage `json:"metadata,omitempty"`
 		Duration json.RawMessage `json:"duration,omitempty"`
+		Seconds  json.RawMessage `json:"seconds,omitempty"`
 		*Alias
 	}{
 		Alias: (*Alias)(t),
@@ -982,6 +983,20 @@ func (t *TaskSubmitReq) UnmarshalJSON(data []byte) error {
 				if v, err := strconv.Atoi(durationStr); err == nil {
 					t.Duration = v
 				}
+			}
+		}
+	}
+
+	// `seconds` arrives as a string from OpenAI-style clients and as a number
+	// from most vendor SDKs; accept both and normalise to the string field.
+	if len(aux.Seconds) > 0 {
+		var secondsStr string
+		if err := common.Unmarshal(aux.Seconds, &secondsStr); err == nil {
+			t.Seconds = secondsStr
+		} else {
+			var secondsNum float64
+			if err := common.Unmarshal(aux.Seconds, &secondsNum); err == nil {
+				t.Seconds = strconv.FormatFloat(secondsNum, 'f', -1, 64)
 			}
 		}
 	}

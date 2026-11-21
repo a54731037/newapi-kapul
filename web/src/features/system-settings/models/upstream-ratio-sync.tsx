@@ -61,8 +61,12 @@ import {
   OPENROUTER_ENDPOINT,
 } from './constants'
 import {
+  customSourceUpstream,
   describeSyncPrice,
   getUpstreamDisplayName,
+  readCustomPriceSources,
+  writeCustomPriceSources,
+  type CustomPriceSource,
   type PricingSourceSelection,
   type PricingSourceSelections,
 } from './upstream-ratio-sync-helpers'
@@ -92,6 +96,9 @@ export function UpstreamRatioSync() {
     useState<PricingSourceSelections>({})
   const [conflictItems, setConflictItems] = useState<ConflictItem[]>([])
   const [loadingBaseline, setLoadingBaseline] = useState(false)
+  const [customSources, setCustomSources] = useState<CustomPriceSource[]>(() =>
+    readCustomPriceSources()
+  )
   const { data: channelsData } = useQuery({
     queryKey: ['upstream-channels'],
     queryFn: async () => requireServerSuccess(await getUpstreamChannels()),
@@ -205,21 +212,44 @@ export function UpstreamRatioSync() {
     onError: (error: Error) =>
       handleServerError(error, t('Failed to sync prices')),
   })
-  const handleConfirmChannelSelection = async (selectedIds: number[]) => {
+  const handleConfirmChannelSelection = async (
+    selectedIds: number[],
+    sources: CustomPriceSource[]
+  ) => {
+    const usableSources = sources.filter((source) => source.url.trim())
+    writeCustomPriceSources(usableSources)
+    setCustomSources(usableSources)
+
     const selected = channels.filter((channel) =>
       selectedIds.includes(channel.id)
     )
-    if (!selected.length) {
+    if (!selected.length && !usableSources.length) {
       toast.warning(t('Please select at least one channel'))
       return
     }
-    const upstreams: UpstreamConfig[] = selected.map((channel) => ({
-      id: channel.id,
-      name: channel.name,
-      base_url: channel.base_url,
-      endpoint:
-        channelEndpoints[channel.id] || getDefaultEndpointForChannel(channel),
-    }))
+
+    const customUpstreams: UpstreamConfig[] = []
+    for (const source of usableSources) {
+      try {
+        customUpstreams.push(customSourceUpstream(source))
+      } catch {
+        toast.error(
+          t('Invalid custom source URL: {{url}}', { url: source.url })
+        )
+        return
+      }
+    }
+
+    const upstreams: UpstreamConfig[] = [
+      ...selected.map((channel) => ({
+        id: channel.id,
+        name: channel.name,
+        base_url: channel.base_url,
+        endpoint:
+          channelEndpoints[channel.id] || getDefaultEndpointForChannel(channel),
+      })),
+      ...customUpstreams,
+    ]
     setLoadingBaseline(true)
     setPrices({})
     setDifferences({})
@@ -290,7 +320,10 @@ export function UpstreamRatioSync() {
               <Button
                 variant='outline'
                 onClick={() =>
-                  void handleConfirmChannelSelection(selectedChannelIds)
+                  void handleConfirmChannelSelection(
+                    selectedChannelIds,
+                    customSources
+                  )
                 }
               >
                 {t('Retry')}
@@ -357,6 +390,8 @@ export function UpstreamRatioSync() {
         onSelectedChannelIdsChange={setSelectedChannelIds}
         channelEndpoints={channelEndpoints}
         onChannelEndpointsChange={setChannelEndpoints}
+        customSources={customSources}
+        onCustomSourcesChange={setCustomSources}
         onConfirm={handleConfirmChannelSelection}
       />
       <ConflictConfirmDialog

@@ -17,11 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useNavigate } from '@tanstack/react-router'
+import * as React from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import * as z from 'zod'
+import { z } from 'zod'
 
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -31,6 +33,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Switch } from '@/components/ui/switch'
+import { cn } from '@/lib/utils'
 
 import {
   SettingsForm,
@@ -41,126 +44,170 @@ import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useUpdateOption } from '../hooks/use-update-option'
 
-const drawingSchema = z.object({
-  DrawingEnabled: z.boolean(),
-  MjNotifyEnabled: z.boolean(),
-  MjAccountFilterEnabled: z.boolean(),
-  MjForwardUrlEnabled: z.boolean(),
-  MjModeClearEnabled: z.boolean(),
-  MjActionCheckSuccessEnabled: z.boolean(),
+const studioSchema = z.object({
+  StudioEnabled: z.boolean(),
+  StudioImageEnabled: z.boolean(),
+  StudioCanvasEnabled: z.boolean(),
+  StudioVideoEnabled: z.boolean(),
+  StudioAudioEnabled: z.boolean(),
 })
 
-type DrawingFormValues = z.infer<typeof drawingSchema>
+type StudioFormValues = z.infer<typeof studioSchema>
 
 type DrawingSettingsSectionProps = {
-  defaultValues: DrawingFormValues
+  defaultValues: StudioFormValues
 }
 
-export function DrawingSettingsSection({
-  defaultValues,
-}: DrawingSettingsSectionProps) {
+const SUB_FEATURES = [
+  {
+    key: 'StudioImageEnabled',
+    label: 'Image generation',
+    description:
+      'The image form inside the board: prompt, size, history and editing.',
+  },
+  {
+    key: 'StudioCanvasEnabled',
+    label: 'Node canvas',
+    description:
+      'The infinite board: place, connect and re-use generated media.',
+  },
+  {
+    key: 'StudioVideoEnabled',
+    label: 'Video creation',
+    description: 'The video tab plus the video target inside the canvas panel.',
+  },
+  {
+    key: 'StudioAudioEnabled',
+    label: 'Audio generation',
+    description: 'The speech target inside the canvas panel.',
+  },
+] as const
+
+/**
+ * Creative workspace switches. The master switch hides the whole workspace
+ * (sidebar entry, all tabs, and the `/drawing` compatibility route); the sub
+ * switches narrow it down per capability: image generation, the node canvas,
+ * video and audio can each be switched off on their own.
+ */
+export function DrawingSettingsSection(props: DrawingSettingsSectionProps) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const updateOption = useUpdateOption()
-  const form = useForm<DrawingFormValues>({
-    resolver: zodResolver(drawingSchema),
-    defaultValues,
+  const form = useForm<StudioFormValues>({
+    resolver: zodResolver(studioSchema),
+    defaultValues: props.defaultValues,
   })
 
-  useEffect(() => {
-    form.reset(defaultValues)
-  }, [defaultValues, form])
+  React.useEffect(() => {
+    form.reset(props.defaultValues)
+  }, [props.defaultValues, form])
 
-  const onSubmit = async (values: DrawingFormValues) => {
-    const updates = Object.entries(values).filter(
-      ([key, value]) => value !== defaultValues[key as keyof DrawingFormValues]
-    )
+  const studioEnabled = useWatch({
+    control: form.control,
+    name: 'StudioEnabled',
+  })
 
-    for (const [key, value] of updates) {
-      await updateOption.mutateAsync({ key, value })
+  const onSubmit = async (values: StudioFormValues) => {
+    const changed = (
+      Object.keys(values) as Array<keyof StudioFormValues>
+    ).filter((key) => values[key] !== props.defaultValues[key])
+    for (const key of changed) {
+      await updateOption.mutateAsync({ key, value: values[key] })
     }
   }
 
-  const switches: Array<{
-    name: keyof DrawingFormValues
-    label: string
-    description: string
-  }> = [
-    {
-      name: 'DrawingEnabled',
-      label: t('Enable drawing features'),
-      description: t(
-        'Required to expose MjProxy-style image generation to end users.'
-      ),
-    },
-    {
-      name: 'MjNotifyEnabled',
-      label: t('Allow upstream callbacks'),
-      description: t(
-        'When enabled, MjProxy callbacks are accepted (reveals server IP).'
-      ),
-    },
-    {
-      name: 'MjAccountFilterEnabled',
-      label: t('Allow accountFilter parameter'),
-      description: t(
-        'Keep enabled if you need to proxy requests for different upstream accounts.'
-      ),
-    },
-    {
-      name: 'MjForwardUrlEnabled',
-      label: t('Rewrite callback URLs to the local server'),
-      description: t(
-        'Automatically replaces upstream callback URLs with the server address.'
-      ),
-    },
-    {
-      name: 'MjModeClearEnabled',
-      label: t('Clear mode flags in prompts'),
-      description: t(
-        'Removes MjProxy flags such as --fast, --relax, and --turbo from user prompts.'
-      ),
-    },
-    {
-      name: 'MjActionCheckSuccessEnabled',
-      label: t('Require job success before follow-up actions'),
-      description: t(
-        'Users must wait for a successful drawing before upscales or variations.'
-      ),
-    },
-  ]
-
   return (
-    <SettingsSection title={t('Drawing')}>
+    <SettingsSection title={t('Creative workspace')}>
       <Form {...form}>
         <SettingsForm onSubmit={form.handleSubmit(onSubmit)}>
           <SettingsPageFormActions
             onSave={form.handleSubmit(onSubmit)}
             isSaving={updateOption.isPending}
-            saveLabel='Save drawing settings'
+            saveLabel='Save creative workspace settings'
           />
           <div className='space-y-4'>
-            {switches.map((item) => (
-              <FormField
-                key={item.name}
-                control={form.control}
-                name={item.name}
-                render={({ field }) => (
-                  <SettingsSwitchItem>
-                    <SettingsSwitchContent>
-                      <FormLabel>{item.label}</FormLabel>
-                      <FormDescription>{item.description}</FormDescription>
-                    </SettingsSwitchContent>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </SettingsSwitchItem>
-                )}
-              />
-            ))}
+            <FormField
+              control={form.control}
+              name='StudioEnabled'
+              render={({ field }) => (
+                <SettingsSwitchItem>
+                  <SettingsSwitchContent>
+                    <FormLabel>{t('Enable creative workspace')}</FormLabel>
+                    <FormDescription>
+                      {t(
+                        'Master switch: when off, the workspace entry, every tab and the drawing board entry are hidden.'
+                      )}
+                    </FormDescription>
+                  </SettingsSwitchContent>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </SettingsSwitchItem>
+              )}
+            />
+
+            <div
+              className={cn(
+                'border-border/70 ml-1 space-y-1 rounded-lg border-l-2 pl-4',
+                !studioEnabled && 'opacity-60'
+              )}
+            >
+              <p className='text-muted-foreground pb-1 text-[12px]'>
+                {t('Features available inside the workspace')}
+              </p>
+              {SUB_FEATURES.map((feature) => (
+                <FormField
+                  key={feature.key}
+                  control={form.control}
+                  name={feature.key}
+                  render={({ field }) => (
+                    <SettingsSwitchItem>
+                      <SettingsSwitchContent>
+                        <FormLabel>{t(feature.label)}</FormLabel>
+                        <FormDescription>
+                          {t(feature.description)}
+                        </FormDescription>
+                      </SettingsSwitchContent>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          disabled={!studioEnabled}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </SettingsSwitchItem>
+                  )}
+                />
+              ))}
+            </div>
+
+            <div className='border-border/70 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4'>
+              <div className='min-w-0'>
+                <p className='text-[13px] font-medium'>
+                  {t('Preview the workspace')}
+                </p>
+                <p className='text-muted-foreground text-[12px]'>
+                  {t(
+                    'Only the features switched on above are shown to every user.'
+                  )}
+                </p>
+              </div>
+              <Button
+                type='button'
+                variant='outline'
+                disabled={!studioEnabled}
+                onClick={() =>
+                  void navigate({ to: '/studio', search: { tab: 'canvas' } })
+                }
+              >
+                {t('Open creative workspace')}
+              </Button>
+            </div>
           </div>
         </SettingsForm>
       </Form>

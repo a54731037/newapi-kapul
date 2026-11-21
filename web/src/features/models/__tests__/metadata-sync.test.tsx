@@ -509,3 +509,123 @@ describe('metadata sync preview', () => {
     client.clear()
   })
 })
+
+describe('metadata sync bulk field selection', () => {
+  const bulkPreview: MetadataSyncPreview = {
+    source: preview.source,
+    candidates: [
+      {
+        model_name: 'existing-a',
+        scope: 'site',
+        kind: 'update',
+        record_version: 'a-v1',
+        fields: [
+          { field: 'description', local: 'A local', upstream: 'A upstream' },
+          { field: 'status', local: 1, upstream: 0 },
+        ],
+      },
+      {
+        model_name: 'existing-b',
+        scope: 'site',
+        kind: 'update',
+        record_version: 'b-v1',
+        fields: [
+          { field: 'description', local: 'B local', upstream: 'B upstream' },
+          { field: 'icon', local: '', upstream: 'b.svg' },
+          { field: 'tags', local: '', upstream: 'chat' },
+        ],
+      },
+    ],
+  }
+
+  it('applies metadata fields to every selected existing model at once', async () => {
+    vi.spyOn(api, 'get').mockResolvedValue({
+      data: { success: true, data: bulkPreview },
+    })
+    const post = vi.spyOn(api, 'post').mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          created_models: [],
+          updated_models: [
+            { model_name: 'existing-a', fields: ['description'] },
+            {
+              model_name: 'existing-b',
+              fields: ['description', 'icon', 'tags'],
+            },
+          ],
+          created_vendors: [],
+        },
+      },
+    })
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    render(
+      <QueryClientProvider client={client}>
+        <SyncWizardDialog open onOpenChange={() => {}} />
+      </QueryClientProvider>
+    )
+    const user = userEvent.setup()
+    await user.click(
+      screen.getByRole('button', { name: 'Load metadata preview' })
+    )
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Select all syncable models (all pages, 2)',
+      })
+    )
+    expect(screen.getByText('2 selected models')).toBeVisible()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Preview selected changes' })
+    )
+    // One click fills every pure metadata field for both existing models.
+    await user.click(
+      screen.getByRole('button', { name: 'Select metadata fields' })
+    )
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Apply Description for existing-a',
+      })
+    ).toBeChecked()
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Apply Model square visibility for existing-a',
+      })
+    ).not.toBeChecked()
+    expect(
+      screen.getByRole('checkbox', { name: 'Apply Tags for existing-b' })
+    ).toBeChecked()
+
+    await user.click(
+      screen.getByRole('button', { name: 'Review confirmation' })
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'Apply 2 model changes' })
+    )
+    await screen.findByText('Metadata sync completed')
+    expect(post).toHaveBeenCalledWith('/api/models/sync_upstream', {
+      locale: 'en',
+      source_version: 'source-v1',
+      selections: [
+        {
+          model_name: 'existing-a',
+          record_version: 'a-v1',
+          create: false,
+          fields: ['description'],
+        },
+        {
+          model_name: 'existing-b',
+          record_version: 'b-v1',
+          create: false,
+          fields: ['description', 'icon', 'tags'],
+        },
+      ],
+    })
+    client.clear()
+  })
+})

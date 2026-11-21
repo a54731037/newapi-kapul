@@ -32,7 +32,6 @@ interface AffiliateRewardsCardProps {
   user: UserWalletData | null
   affiliateLink: string
   onTransfer: () => void
-  complianceConfirmed?: boolean
   loading?: boolean
   commissionRate?: number
 }
@@ -41,7 +40,6 @@ export function AffiliateRewardsCard({
   user,
   affiliateLink,
   onTransfer,
-  complianceConfirmed = true,
   loading,
   commissionRate,
 }: AffiliateRewardsCardProps) {
@@ -151,21 +149,11 @@ export function AffiliateRewardsCard({
             aria-label={t('复制邀请链接')}
           />
           {hasRewards && (
-            <Button
-              onClick={onTransfer}
-              disabled={!complianceConfirmed}
-              className='h-10 shrink-0 px-4'
-            >
+            <Button onClick={onTransfer} className='h-10 shrink-0 px-4'>
               {t('转入余额')}
             </Button>
           )}
         </div>
-
-        {!complianceConfirmed ? (
-          <p className='text-muted-foreground text-xs'>
-            {t('管理员尚未确认合规条款，返利转入暂时不可用。')}
-          </p>
-        ) : null}
       </CardContent>
     </Card>
   )

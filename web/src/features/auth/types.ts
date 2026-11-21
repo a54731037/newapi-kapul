@@ -80,6 +80,8 @@ export interface Login2FAResponse {
 export interface ApiResponse<T = unknown> {
   success: boolean
   message: string
+  /** Stable i18n key for errors the client branches on; `message` is translated. */
+  code?: string
   data?: T
 }
 
@@ -132,6 +134,12 @@ export interface SystemStatus {
     oauth_register_enabled?: boolean
     docs_content?: string
     register_enabled?: boolean
+    enable_drawing?: boolean
+    enable_studio?: boolean
+    enable_studio_image?: boolean
+    enable_studio_canvas?: boolean
+    enable_studio_video?: boolean
+    enable_studio_audio?: boolean
     password_login_enabled?: boolean
     password_login_encryption_enabled?: boolean
     password_register_enabled?: boolean

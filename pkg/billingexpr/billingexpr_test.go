@@ -1197,3 +1197,21 @@ func TestFrontendSimulationContract(t *testing.T) {
 		})
 	}
 }
+
+func TestCompileRejectsUnknownVariable(t *testing.T) {
+	// A typo used to compile and then evaluate to nil, surfacing as
+	// "invalid operation: <nil> * int" during the save-time smoke test.
+	_, err := billingexpr.CompileFromCache(
+		`tier("0_272k", p * 4 + cc12h * 10)`,
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `unknown variable "cc12h"`)
+	assert.Contains(t, err.Error(), "cc1h")
+
+	cost, _, err := billingexpr.RunExpr(
+		`len <= 272000 ? tier("0_272k", p * 4 + cc1h * 10 + c * 20) : tier("272k_plus", p * 8 + cc1h * 20 + c * 30)`,
+		billingexpr.TokenParams{P: 1000, C: 100, Len: 1000},
+	)
+	require.NoError(t, err)
+	assert.Equal(t, float64(6000), cost)
+}
